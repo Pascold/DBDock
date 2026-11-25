@@ -7,6 +7,7 @@ use egui::{Align2, Color32, RichText};
 use super::theme::{ERROR_COLOR, OK_COLOR};
 use crate::app::Action;
 use crate::docker::worker::OpId;
+use crate::i18n::t;
 
 const MAX_TOASTS: usize = 5;
 
@@ -105,13 +106,15 @@ impl Toasts {
                             });
                             ui.horizontal(|ui| {
                                 if let Some(op) = toast.output {
-                                    if ui.small_button("Show output").clicked() {
+                                    if ui.small_button(t("toast.show_output")).clicked() {
                                         actions.push(Action::ShowOutput(op));
                                         close = Some(index);
                                     }
                                 }
                                 if ui
-                                    .small_button(RichText::new("Dismiss").color(Color32::GRAY))
+                                    .small_button(
+                                        RichText::new(t("toast.dismiss")).color(Color32::GRAY),
+                                    )
                                     .clicked()
                                 {
                                     close = Some(index);

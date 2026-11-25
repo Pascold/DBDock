@@ -7,6 +7,7 @@ use egui::{Align2, RichText};
 use super::theme::ERROR_COLOR;
 use crate::app::{Action, DbDockApp};
 use crate::engines::EngineId;
+use crate::i18n::{t, tf};
 
 /// How often an open logs window refreshes itself.
 const LOGS_REFRESH: Duration = Duration::from_secs(3);
@@ -48,7 +49,7 @@ impl DbDockApp {
         let engine = id.engine();
         let info = engine.connection(self.config.engine(id), &self.paths);
         let mut open = true;
-        egui::Window::new(format!("Connect to {}", id.display_name()))
+        egui::Window::new(tf("connection.title", &[("engine", &id.display_name())]))
             .id(egui::Id::unique(("connection", id.key())))
             .open(&mut open)
             .collapsible(false)
@@ -62,26 +63,26 @@ impl DbDockApp {
                         let mut row = |ui: &mut egui::Ui, label: &str, value: String| {
                             ui.label(label);
                             ui.label(RichText::new(&value).monospace());
-                            if ui.small_button("Copy").clicked() {
+                            if ui.small_button(t("common.copy")).clicked() {
                                 actions.push(Action::Copy(value));
                             }
                             ui.end_row();
                         };
                         if let Some(port) = info.port {
-                            row(ui, "Host", info.host.clone());
-                            row(ui, "Port", port.to_string());
-                            row(ui, "Database", info.database.clone());
-                            row(ui, "User", info.user.clone());
-                            row(ui, "Password", info.password.clone());
+                            row(ui, t("connection.host"), info.host.clone());
+                            row(ui, t("connection.port"), port.to_string());
+                            row(ui, t("connection.database"), info.database.clone());
+                            row(ui, t("connection.user"), info.user.clone());
+                            row(ui, t("connection.password"), info.password.clone());
                         } else {
-                            row(ui, "Database file", info.database.clone());
+                            row(ui, t("connection.database_file"), info.database.clone());
                         }
                     });
                 ui.separator();
                 for (label, value) in &info.strings {
                     ui.horizontal(|ui| {
                         ui.label(RichText::new(*label).strong());
-                        if ui.small_button("Copy").clicked() {
+                        if ui.small_button(t("common.copy")).clicked() {
                             actions.push(Action::Copy(value.clone()));
                         }
                     });
@@ -96,12 +97,13 @@ impl DbDockApp {
                     ui.add_space(6.0);
                     ui.label(RichText::new(note).weak());
                 }
-                if id == EngineId::InterBase && ui.button("InterBase setup guide").clicked() {
+                if id == EngineId::InterBase && ui.button(t("connection.interbase_guide")).clicked()
+                {
                     actions.push(Action::OpenInterBaseWizard);
                 }
                 if id == EngineId::Sqlite {
                     ui.add_space(6.0);
-                    if ui.button("Open folder").clicked() {
+                    if ui.button(t("common.open_folder")).clicked() {
                         actions.push(Action::OpenFolder(self.paths.sqlite_dir()));
                     }
                 }
@@ -117,7 +119,7 @@ impl DbDockApp {
         };
         let mut open = true;
         let mut refresh = false;
-        egui::Window::new(format!("{} logs", logs.engine.display_name()))
+        egui::Window::new(tf("logs.title", &[("engine", &logs.engine.display_name())]))
             .id(egui::Id::unique("logs-window"))
             .open(&mut open)
             .default_width(760.0)
@@ -125,14 +127,14 @@ impl DbDockApp {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     if ui
-                        .add_enabled(!logs.loading, egui::Button::new("Refresh"))
+                        .add_enabled(!logs.loading, egui::Button::new(t("logs.refresh")))
                         .clicked()
                     {
                         refresh = true;
                     }
-                    ui.checkbox(&mut logs.auto_refresh, "Auto refresh");
+                    ui.checkbox(&mut logs.auto_refresh, t("logs.auto_refresh"));
                     if let Some(Ok(text)) = &logs.text {
-                        if ui.button("Copy").clicked() {
+                        if ui.button(t("common.copy")).clicked() {
                             ui.ctx().copy_text(text.clone());
                         }
                     }
@@ -140,8 +142,11 @@ impl DbDockApp {
                         ui.spinner();
                     }
                     ui.label(
-                        RichText::new(format!("last {} lines", crate::docker::worker::LOG_LINES))
-                            .weak(),
+                        RichText::new(tf(
+                            "logs.last_lines",
+                            &[("count", &crate::docker::worker::LOG_LINES)],
+                        ))
+                        .weak(),
                     );
                 });
                 ui.separator();
@@ -153,7 +158,7 @@ impl DbDockApp {
                             ui.spinner();
                         }
                         Some(Ok(text)) if text.trim().is_empty() => {
-                            ui.label(RichText::new("No log output yet.").weak());
+                            ui.label(RichText::new(t("logs.empty")).weak());
                         }
                         Some(Ok(text)) => {
                             ui.add(egui::Label::new(RichText::new(text).monospace()).extend());
@@ -186,27 +191,25 @@ impl DbDockApp {
         let mut close = false;
         let modal = egui::Modal::new(egui::Id::unique("reset-confirm")).show(ctx, |ui| {
             ui.set_max_width(420.0);
-            ui.heading(format!("Reset {}?", id.display_name()));
+            ui.heading(tf("reset.title", &[("engine", &id.display_name())]));
             ui.add_space(6.0);
             ui.label(if id == EngineId::Sqlite {
-                "The database file is deleted. It is created again, with the current settings, \
-                 on the next start."
+                t("reset.text_sqlite")
             } else {
-                "The container and its data volume are deleted, including every table and \
-                 row. The database is initialised again, with the current settings, on the \
-                 next start."
+                t("reset.text")
             });
             if id == EngineId::InterBase {
-                ui.label("The registered license is kept.");
+                ui.label(t("reset.license_kept"));
             }
             ui.add_space(10.0);
             ui.horizontal(|ui| {
-                let delete = egui::Button::new(RichText::new("Delete data").color(ERROR_COLOR));
+                let delete =
+                    egui::Button::new(RichText::new(t("reset.confirm")).color(ERROR_COLOR));
                 if ui.add(delete).clicked() {
                     actions.push(Action::ResetConfirmed(id));
                     close = true;
                 }
-                if ui.button("Cancel").clicked() {
+                if ui.button(t("common.cancel")).clicked() {
                     close = true;
                 }
             });
@@ -219,21 +222,10 @@ impl DbDockApp {
 
 fn connection_note(id: EngineId) -> Option<&'static str> {
     match id {
-        EngineId::MsSql => Some(
-            "SQL Server uses a self-signed certificate: enable TrustServerCertificate \
-             (or -C for sqlcmd) in your client.",
-        ),
-        EngineId::Firebird => Some(
-            "Wire encryption is enabled. Firebird 3+ clients connect with the default \
-             settings; older clients may need WireCrypt = Enabled.",
-        ),
-        EngineId::InterBase => Some(
-            "InterBase starts without a database: create one with isql as shown in the \
-             InterBase setup guide.",
-        ),
-        EngineId::Sqlite => {
-            Some("SQLite has no server: open the file directly. It is created on the first start.")
-        }
+        EngineId::MsSql => Some(t("connection.note_mssql")),
+        EngineId::Firebird => Some(t("connection.note_firebird")),
+        EngineId::InterBase => Some(t("connection.note_interbase")),
+        EngineId::Sqlite => Some(t("connection.note_sqlite")),
         _ => None,
     }
 }

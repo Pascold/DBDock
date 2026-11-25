@@ -7,6 +7,7 @@ use crate::config::validate::{self, Issue, Problem, Severity};
 use crate::config::{AppConfig, EngineSettings};
 use crate::docker::status::EngineStatus;
 use crate::engines::{EngineId, Field};
+use crate::i18n::{t, tf};
 
 /// Unsaved edits of one engine.
 pub struct SettingsDraft {
@@ -81,7 +82,7 @@ impl SettingsDraft {
 
         let mut outcome = SettingsOutcome::Open;
         let mut open = true;
-        egui::Window::new(format!("{} settings", id.display_name()))
+        egui::Window::new(tf("settings.title", &[("engine", &id.display_name())]))
             .id(egui::Id::unique(("settings", id.key())))
             .open(&mut open)
             .collapsible(false)
@@ -99,34 +100,16 @@ impl SettingsDraft {
                     });
 
                 ui.add_space(8.0);
-                ui.label(
-                    RichText::new(
-                        "Changes take effect when the container is recreated. Database name, \
-                         user and passwords are applied only when the data is created for the \
-                         first time.",
-                    )
-                    .weak(),
-                );
+                ui.label(RichText::new(t("settings.recreate_note")).weak());
                 if credentials_changed && status.is_created() {
                     ui.add_space(4.0);
-                    ui.colored_label(
-                        WARNING_COLOR,
-                        "The data already exists, so the new login settings only take effect \
-                         after resetting the data (all data in this database is deleted).",
-                    );
+                    ui.colored_label(WARNING_COLOR, t("settings.reset_warning"));
                 }
-                ui.label(
-                    RichText::new(
-                        "Passwords are stored in plain text in config.toml: use test passwords \
-                         only.",
-                    )
-                    .weak()
-                    .small(),
-                );
+                ui.label(RichText::new(t("settings.plain_text")).weak().small());
 
                 ui.separator();
                 ui.horizontal_wrapped(|ui| {
-                    if ui.button("Restore defaults").clicked() {
+                    if ui.button(t("settings.restore_defaults")).clicked() {
                         let enabled = self.settings.enabled;
                         self.settings = engine.default_settings();
                         self.settings.enabled = enabled;
@@ -139,27 +122,30 @@ impl SettingsDraft {
                                 && ui
                                     .add_enabled(
                                         can_save,
-                                        egui::Button::new("Apply and reset data"),
+                                        egui::Button::new(t("settings.apply_reset")),
                                     )
-                                    .on_hover_text("Deletes all data of this database")
+                                    .on_hover_text(t("settings.apply_reset_hint"))
                                     .clicked()
                             {
                                 outcome = SettingsOutcome::SaveAndReset;
                             }
                             if ui
-                                .add_enabled(can_save, egui::Button::new("Apply and restart"))
+                                .add_enabled(
+                                    can_save,
+                                    egui::Button::new(t("settings.apply_restart")),
+                                )
                                 .clicked()
                             {
                                 outcome = SettingsOutcome::SaveAndRecreate;
                             }
                         }
                         if ui
-                            .add_enabled(can_save, egui::Button::new("Save"))
+                            .add_enabled(can_save, egui::Button::new(t("settings.save")))
                             .clicked()
                         {
                             outcome = SettingsOutcome::Save;
                         }
-                        if ui.button("Cancel").clicked() {
+                        if ui.button(t("common.cancel")).clicked() {
                             outcome = SettingsOutcome::Cancel;
                         }
                     });
@@ -183,7 +169,7 @@ impl SettingsDraft {
                                 .desired_width(160.0),
                         );
                         egui::ComboBox::from_id_salt("version-suggestions")
-                            .selected_text("Suggestions")
+                            .selected_text(t("settings.suggestions"))
                             .show_ui(ui, |ui| {
                                 for &tag in id.engine().version_suggestions() {
                                     ui.selectable_value(
@@ -195,9 +181,12 @@ impl SettingsDraft {
                             });
                     });
                     ui.label(
-                        RichText::new(format!("Image: {}", id.engine().image(&self.settings)))
-                            .weak()
-                            .small(),
+                        RichText::new(tf(
+                            "settings.image",
+                            &[("image", &id.engine().image(&self.settings))],
+                        ))
+                        .weak()
+                        .small(),
                     );
                 }
                 Field::Port => {
@@ -229,10 +218,7 @@ impl SettingsDraft {
                     );
                 }
                 Field::Seed => {
-                    ui.checkbox(
-                        &mut self.settings.seed,
-                        "Create tables klienci and zamowienia with sample rows",
-                    );
+                    ui.checkbox(&mut self.settings.seed, t("settings.seed_label"));
                 }
             }
             for issue in issues.iter().filter(|i| i.field == field) {
@@ -254,7 +240,11 @@ fn password_input(ui: &mut egui::Ui, value: &mut String, show: &mut bool) {
                 .password(!*show)
                 .desired_width(180.0),
         );
-        let label = if *show { "Hide" } else { "Show" };
+        let label = if *show {
+            t("settings.hide")
+        } else {
+            t("settings.show")
+        };
         if ui.button(label).clicked() {
             *show = !*show;
         }
@@ -263,39 +253,34 @@ fn password_input(ui: &mut egui::Ui, value: &mut String, show: &mut bool) {
 
 fn field_label(id: EngineId, field: Field) -> String {
     match field {
-        Field::Version => "Version (image tag)".into(),
-        Field::Port => "Host port".into(),
-        Field::Database if id == EngineId::Sqlite => "File name".into(),
-        Field::Database => "Database".into(),
-        Field::User => "User".into(),
-        Field::Password => "Password".into(),
-        Field::AdminPassword => {
-            format!("{} password", id.engine().admin_user().unwrap_or("Admin"))
-        }
-        Field::Seed => "Sample data".into(),
+        Field::Version => t("settings.field.version").into(),
+        Field::Port => t("settings.field.port").into(),
+        Field::Database if id == EngineId::Sqlite => t("settings.field.file_name").into(),
+        Field::Database => t("settings.field.database").into(),
+        Field::User => t("settings.field.user").into(),
+        Field::Password => t("settings.field.password").into(),
+        Field::AdminPassword => tf(
+            "settings.field.admin_password",
+            &[("user", &id.engine().admin_user().unwrap_or("admin"))],
+        ),
+        Field::Seed => t("settings.field.seed").into(),
     }
 }
 
 /// Human readable description of a validation issue.
 pub fn issue_text(issue: &Issue) -> String {
     match issue.problem {
-        Problem::Empty => "Required.".into(),
-        Problem::InvalidPort => "Enter a port between 1 and 65535.".into(),
+        Problem::Empty => t("issue.empty").into(),
+        Problem::InvalidPort => t("issue.invalid_port").into(),
         Problem::PortConflict(other) => {
-            format!("Port already used by {}.", other.display_name())
+            tf("issue.port_conflict", &[("engine", &other.display_name())])
         }
-        Problem::PortInUse => "Another program listens on this port.".into(),
-        Problem::WeakMssqlPassword => "SQL Server needs at least 8 characters from three of: \
-                                       upper case, lower case, digits, symbols."
-            .into(),
-        Problem::UnsupportedCharacters => {
-            "Use ASCII letters, digits and symbols except ' \" \\ ` ; and spaces.".into()
-        }
-        Problem::InvalidIdentifier => {
-            "Use letters, digits and _ (not starting with a digit).".into()
-        }
-        Problem::InvalidFileName => "Use letters, digits, '.', '-' and '_' only.".into(),
-        Problem::InvalidTag => "Not a valid image tag.".into(),
-        Problem::ReservedUser => "root is created automatically; choose another user.".into(),
+        Problem::PortInUse => t("issue.port_in_use").into(),
+        Problem::WeakMssqlPassword => t("issue.weak_mssql_password").into(),
+        Problem::UnsupportedCharacters => t("issue.unsupported_characters").into(),
+        Problem::InvalidIdentifier => t("issue.invalid_identifier").into(),
+        Problem::InvalidFileName => t("issue.invalid_file_name").into(),
+        Problem::InvalidTag => t("issue.invalid_tag").into(),
+        Problem::ReservedUser => t("issue.reserved_user").into(),
     }
 }

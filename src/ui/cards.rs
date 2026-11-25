@@ -7,18 +7,19 @@ use crate::app::{Action, DbDockApp};
 use crate::docker::status::EngineStatus;
 use crate::docker::worker::OpKind;
 use crate::engines::{EngineId, Field};
+use crate::i18n::{t, tf};
 
 const CARD_WIDTH: f32 = 300.0;
 const CARD_SPACING: f32 = 12.0;
 
 pub fn status_text(status: EngineStatus) -> &'static str {
     match status {
-        EngineStatus::NotCreated => "Not created",
-        EngineStatus::Stopped => "Stopped",
-        EngineStatus::Starting => "Starting",
-        EngineStatus::Healthy => "Healthy",
-        EngineStatus::Running => "Running",
-        EngineStatus::Error => "Error",
+        EngineStatus::NotCreated => t("status.not_created"),
+        EngineStatus::Stopped => t("status.stopped"),
+        EngineStatus::Starting => t("status.starting"),
+        EngineStatus::Healthy => t("status.healthy"),
+        EngineStatus::Running => t("status.running"),
+        EngineStatus::Error => t("status.error"),
     }
 }
 
@@ -31,7 +32,7 @@ impl DbDockApp {
                     if let Some(error) = &self.status_error {
                         ui.colored_label(
                             super::theme::WARNING_COLOR,
-                            format!("Status refresh failed: {}", first_line(error)),
+                            tf("card.status_failed", &[("error", &first_line(error))]),
                         );
                         ui.add_space(6.0);
                     }
@@ -80,7 +81,10 @@ impl DbDockApp {
                         ui.label(RichText::new(id.display_name()).strong().size(16.0));
                         let mut details = settings.version.clone();
                         if engine.uses(Field::Port) {
-                            details.push_str(&format!("  ·  port {}", settings.port));
+                            details.push_str(&format!(
+                                "  ·  {}",
+                                tf("card.port", &[("port", &settings.port)])
+                            ));
                         }
                         ui.label(RichText::new(details).weak());
                     });
@@ -88,7 +92,7 @@ impl DbDockApp {
                         let mut enabled = settings.enabled;
                         let toggle = ui
                             .add_enabled(!busy, egui::Checkbox::without_text(&mut enabled))
-                            .on_hover_text("Enabled");
+                            .on_hover_text(t("card.enabled"));
                         if toggle.changed() {
                             actions.push(Action::SetEnabled(id, enabled));
                         }
@@ -103,7 +107,7 @@ impl DbDockApp {
                         let label = format!("{}…", crate::app::kind_text(op.kind));
                         if ui
                             .link(label)
-                            .on_hover_text("Show the command output")
+                            .on_hover_text(t("card.show_output"))
                             .clicked()
                         {
                             actions.push(Action::ShowOutput(op.id));
@@ -122,7 +126,7 @@ impl DbDockApp {
                     let up = status.is_up();
                     if id == EngineId::InterBase && !self.config.interbase_licensed {
                         if ui
-                            .add_enabled(!busy, egui::Button::new("Set up license…"))
+                            .add_enabled(!busy, egui::Button::new(t("card.setup_license")))
                             .clicked()
                         {
                             actions.push(Action::OpenInterBaseWizard);
@@ -133,30 +137,33 @@ impl DbDockApp {
                         // No server: "start" creates the file once.
                         let can_create = can_act && !status.is_created();
                         if ui
-                            .add_enabled(can_create, egui::Button::new("Create file"))
+                            .add_enabled(can_create, egui::Button::new(t("card.create_file")))
                             .clicked()
                         {
                             actions.push(Action::Op(OpKind::Start, vec![id]));
                         }
-                        if ui.button("Open folder").clicked() {
+                        if ui.button(t("common.open_folder")).clicked() {
                             actions.push(Action::OpenFolder(self.paths.sqlite_dir()));
                         }
                         return;
                     }
                     if ui
-                        .add_enabled(can_act && !up, egui::Button::new("Start"))
+                        .add_enabled(can_act && !up, egui::Button::new(t("card.start")))
                         .clicked()
                     {
                         actions.push(Action::Op(OpKind::Start, vec![id]));
                     }
                     if ui
-                        .add_enabled(can_act && up, egui::Button::new("Stop"))
+                        .add_enabled(can_act && up, egui::Button::new(t("card.stop")))
                         .clicked()
                     {
                         actions.push(Action::Op(OpKind::Stop, vec![id]));
                     }
                     if ui
-                        .add_enabled(can_act && status.is_created(), egui::Button::new("Restart"))
+                        .add_enabled(
+                            can_act && status.is_created(),
+                            egui::Button::new(t("card.restart")),
+                        )
                         .clicked()
                     {
                         actions.push(Action::Op(OpKind::Restart, vec![id]));
@@ -167,23 +174,23 @@ impl DbDockApp {
                 }
                 ui.horizontal_wrapped(|ui| {
                     if ui
-                        .add_enabled(!busy, egui::Button::new("Settings"))
+                        .add_enabled(!busy, egui::Button::new(t("card.settings")))
                         .clicked()
                     {
                         actions.push(Action::OpenSettings(id));
                     }
-                    if ui.button("Connection").clicked() {
+                    if ui.button(t("card.connection")).clicked() {
                         actions.push(Action::OpenConnection(id));
                     }
                     if ui
-                        .button("Copy")
-                        .on_hover_text("Copy the connection string")
+                        .button(t("common.copy"))
+                        .on_hover_text(t("card.copy_hint"))
                         .clicked()
                     {
                         actions.push(Action::CopyConnection(id));
                     }
                     if ui
-                        .add_enabled(status.is_created(), egui::Button::new("Logs"))
+                        .add_enabled(status.is_created(), egui::Button::new(t("card.logs")))
                         .clicked()
                     {
                         actions.push(Action::OpenLogs(id));
@@ -191,9 +198,9 @@ impl DbDockApp {
                     if ui
                         .add_enabled(
                             !busy && status.is_created(),
-                            egui::Button::new("Reset data"),
+                            egui::Button::new(t("card.reset")),
                         )
-                        .on_hover_text("Delete the container and all data")
+                        .on_hover_text(t("card.reset_hint"))
                         .clicked()
                     {
                         actions.push(Action::ConfirmReset(id));
@@ -225,10 +232,8 @@ fn first_line(text: &str) -> &str {
 /// Shown on x86-64-only engines when running on an ARM computer.
 fn emulation_warning() -> &'static str {
     if cfg!(target_os = "macos") {
-        "x86-64 image: runs under Rosetta emulation (enable it in Docker Desktop). \
-         Expect slower starts."
+        t("card.emulation_mac")
     } else {
-        "x86-64 image: runs under emulation on this ARM computer (slower, needs \
-         qemu/binfmt support)."
+        t("card.emulation_other")
     }
 }

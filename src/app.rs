@@ -5,11 +5,12 @@ use std::path::PathBuf;
 
 use crate::compose::{self, ComposeContext};
 use crate::config::validate::{self, Severity};
-use crate::config::{AppConfig, Theme};
+use crate::config::{AppConfig, Language, Theme};
 use crate::docker::status::{engine_status, ContainerState, EngineStatus};
 use crate::docker::worker::{Docker, Event, OpId, OpKind};
 use crate::docker::DockerCheck;
 use crate::engines::EngineId;
+use crate::i18n::{self, t, tf};
 use crate::paths::AppPaths;
 use crate::ui::settings::{issue_text, SettingsDraft, SettingsOutcome};
 use crate::ui::toasts::Toasts;
@@ -70,6 +71,7 @@ pub enum Action {
     InterBaseLicensed,
     RecheckDocker,
     SetTheme(Theme),
+    SetLanguage(Language),
 }
 
 pub struct DbDockApp {
@@ -101,10 +103,11 @@ impl DbDockApp {
         let mut toasts = Toasts::default();
 
         let paths = AppPaths::detect().unwrap_or_else(|| {
-            toasts.error("Cannot determine the configuration folder; using ./DBDock.");
+            toasts.error(t("app.no_config_dir"));
             AppPaths::new("DBDock")
         });
         let config = load_config(&paths, &mut toasts);
+        i18n::set_language(config.language.unwrap_or_else(i18n::system_language));
 
         let docker = Docker::new(move || ctx.request_repaint());
         docker.check();
@@ -163,7 +166,7 @@ impl DbDockApp {
 
     pub(crate) fn save_config(&mut self) {
         if let Err(e) = self.config.save(&self.paths.config_file()) {
-            self.toasts.error(format!("Cannot save settings: {e}"));
+            self.toasts.error(tf("app.save_failed", &[("error", &e)]));
         }
     }
 
@@ -174,7 +177,7 @@ impl DbDockApp {
             Ok(path) => Some(path),
             Err(e) => {
                 self.toasts
-                    .error(format!("Cannot write docker-compose.yml: {e}"));
+                    .error(tf("app.compose_failed", &[("error", &e)]));
                 None
             }
         }
@@ -256,11 +259,12 @@ impl DbDockApp {
                 if let Some(next) = then {
                     self.start_op(next, engines, None);
                 } else {
-                    self.toasts.success(format!("{}: {names}", done_text(kind)));
+                    self.toasts
+                        .success(tf(done_key(kind), &[("names", &names)]));
                 }
             }
             Err(e) => self.toasts.error_with_output(
-                format!("{} {names} failed: {}", kind_text(kind), last_line(&e)),
+                tf("op.failed", &[("names", &names), ("error", &last_line(&e))]),
                 id,
             ),
         }
@@ -290,7 +294,7 @@ impl DbDockApp {
                     .filter(|&id| id != EngineId::InterBase || licensed)
                     .collect();
                 if engines.is_empty() {
-                    self.toasts.info("No database is enabled.");
+                    self.toasts.info(t("app.none_enabled"));
                 } else {
                     self.start_op(OpKind::Start, engines, None);
                 }
@@ -318,9 +322,8 @@ impl DbDockApp {
             Action::OpenInterBaseWizard => self.apply_interbase_wizard(),
             Action::OpenTerminal(command) => {
                 if let Err(e) = crate::terminal::open_with_command(&command) {
-                    self.toasts.error(format!(
-                        "Cannot open a terminal ({e}). Copy the command and run it yourself."
-                    ));
+                    self.toasts
+                        .error(tf("app.terminal_failed", &[("error", &e)]));
                 }
             }
             Action::InterBaseLicensed => {
@@ -335,6 +338,11 @@ impl DbDockApp {
             Action::RecheckDocker => {
                 self.docker_check = None;
                 self.docker.check();
+            }
+            Action::SetLanguage(language) => {
+                self.config.language = Some(language);
+                i18n::set_language(language);
+                self.save_config();
             }
             Action::SetTheme(theme) => {
                 self.config.theme = theme;
@@ -398,7 +406,7 @@ impl DbDockApp {
             SettingsOutcome::SaveAndReset => self.reset_and_start(id),
             _ => self
                 .toasts
-                .success(format!("{} settings saved", id.display_name())),
+                .success(tf("app.settings_saved", &[("engine", &id.display_name())])),
         }
     }
 
@@ -414,18 +422,22 @@ impl DbDockApp {
             // Fall back to the clipboard integration of the window backend.
             ctx.copy_text(text);
         }
-        self.toasts.info("Copied to the clipboard");
+        self.toasts.info(t("app.copied"));
     }
 
     fn open_folder(&mut self, path: &std::path::Path) {
         if let Err(e) = std::fs::create_dir_all(path) {
-            self.toasts
-                .error(format!("Cannot create {}: {e}", path.display()));
+            self.toasts.error(tf(
+                "app.create_dir_failed",
+                &[("path", &path.display()), ("error", &e)],
+            ));
             return;
         }
         if let Err(e) = open::that_detached(path) {
-            self.toasts
-                .error(format!("Cannot open {}: {e}", path.display()));
+            self.toasts.error(tf(
+                "app.open_failed",
+                &[("path", &path.display()), ("error", &e)],
+            ));
         }
     }
 
@@ -441,16 +453,19 @@ impl DbDockApp {
         let target = target_dir.join("dbdock-docker-compose.yml");
         match std::fs::copy(&file, &target) {
             Ok(_) => {
-                self.toasts.success(format!(
-                    "Exported to {}. It mounts seed files from {}.",
-                    target.display(),
-                    self.paths.seed_dir().display()
+                self.toasts.success(tf(
+                    "app.exported",
+                    &[
+                        ("path", &target.display()),
+                        ("seeds", &self.paths.seed_dir().display()),
+                    ],
                 ));
                 self.open_folder(&target_dir);
             }
-            Err(e) => self
-                .toasts
-                .error(format!("Cannot export to {}: {e}", target.display())),
+            Err(e) => self.toasts.error(tf(
+                "app.export_failed",
+                &[("path", &target.display()), ("error", &e)],
+            )),
         }
     }
 
@@ -469,8 +484,10 @@ impl DbDockApp {
             let file = crate::engines::sqlite::database_file(self.config.engine(id), &self.paths);
             if let Err(e) = std::fs::remove_file(&file) {
                 if e.kind() != std::io::ErrorKind::NotFound {
-                    self.toasts
-                        .error(format!("Cannot delete {}: {e}", file.display()));
+                    self.toasts.error(tf(
+                        "app.delete_failed",
+                        &[("path", &file.display()), ("error", &e)],
+                    ));
                     return None;
                 }
             }
@@ -490,14 +507,12 @@ impl DbDockApp {
             .as_ref()
             .is_some_and(DockerCheck::is_ready)
         {
-            self.toasts.error("Docker is not available.");
+            self.toasts.error(t("app.docker_unavailable"));
             return None;
         }
         if let Some(busy) = engines.iter().find(|&&id| self.running_op(id).is_some()) {
-            self.toasts.info(format!(
-                "{} is busy, wait for the current operation.",
-                busy.display_name()
-            ));
+            self.toasts
+                .info(tf("app.busy", &[("engine", &busy.display_name())]));
             return None;
         }
         if matches!(kind, OpKind::Start | OpKind::Recreate | OpKind::Restart) {
@@ -508,7 +523,7 @@ impl DbDockApp {
                 .collect();
             if !errors.is_empty() {
                 self.toasts
-                    .error(format!("Fix the settings first.\n{}", errors.join("\n")));
+                    .error(tf("app.fix_settings", &[("issues", &errors.join("\n"))]));
                 return None;
             }
         }
@@ -562,12 +577,12 @@ fn load_config(paths: &AppPaths, toasts: &mut Toasts) -> AppConfig {
             let backup = file.with_extension("toml.broken");
             let kept = std::fs::rename(&file, &backup).is_ok();
             toasts.error(if kept {
-                format!(
-                    "{e}\nDefaults are used; the old file was saved as {}.",
-                    backup.display()
+                tf(
+                    "app.config_broken_backup",
+                    &[("error", &e), ("path", &backup.display())],
                 )
             } else {
-                format!("{e}\nDefaults are used.")
+                tf("app.config_broken", &[("error", &e)])
             });
             AppConfig::default()
         }
@@ -576,7 +591,7 @@ fn load_config(paths: &AppPaths, toasts: &mut Toasts) -> AppConfig {
 
 pub(crate) fn engine_names(engines: &[EngineId]) -> String {
     if engines.is_empty() {
-        return "all databases".to_owned();
+        return t("app.all_databases").to_owned();
     }
     engines
         .iter()
@@ -585,25 +600,27 @@ pub(crate) fn engine_names(engines: &[EngineId]) -> String {
         .join(", ")
 }
 
+/// Present-participle label of a running operation ("Starting").
 pub(crate) fn kind_text(kind: OpKind) -> &'static str {
-    match kind {
-        OpKind::Start => "Starting",
-        OpKind::Stop => "Stopping",
-        OpKind::Restart => "Restarting",
-        OpKind::Recreate => "Applying settings to",
-        OpKind::Reset => "Resetting",
-        OpKind::Remove => "Removing",
-    }
+    t(match kind {
+        OpKind::Start => "op.running.start",
+        OpKind::Stop => "op.running.stop",
+        OpKind::Restart => "op.running.restart",
+        OpKind::Recreate => "op.running.recreate",
+        OpKind::Reset => "op.running.reset",
+        OpKind::Remove => "op.running.remove",
+    })
 }
 
-fn done_text(kind: OpKind) -> &'static str {
+/// Translation key of the success message (with `{names}`).
+fn done_key(kind: OpKind) -> &'static str {
     match kind {
-        OpKind::Start => "Started",
-        OpKind::Stop => "Stopped",
-        OpKind::Restart => "Restarted",
-        OpKind::Recreate => "Settings applied",
-        OpKind::Reset => "Data reset",
-        OpKind::Remove => "Removed",
+        OpKind::Start => "op.done.start",
+        OpKind::Stop => "op.done.stop",
+        OpKind::Restart => "op.done.restart",
+        OpKind::Recreate => "op.done.recreate",
+        OpKind::Reset => "op.done.reset",
+        OpKind::Remove => "op.done.remove",
     }
 }
 
