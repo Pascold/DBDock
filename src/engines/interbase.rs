@@ -9,6 +9,9 @@ pub struct InterBase;
 /// persistent volume.
 pub const HOME: &str = "/opt/interbase";
 
+/// Path to `isql` inside the container.
+pub const ISQL: &str = "/opt/interbase/bin/isql";
+
 /// Path of the database file inside the container.
 pub fn database_path(s: &EngineSettings) -> String {
     format!("{HOME}/{}.ib", s.database)

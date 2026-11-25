@@ -3,7 +3,7 @@
 //! Each engine lives in its own module and implements [`Engine`].
 
 mod firebird;
-mod interbase;
+pub mod interbase;
 mod mariadb;
 mod mssql;
 mod mysql;

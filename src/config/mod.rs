@@ -107,6 +107,9 @@ pub struct AppConfig {
     pub language: Option<Language>,
     #[serde(default)]
     pub theme: Theme,
+    /// Set once the user confirmed the InterBase license registration.
+    #[serde(default)]
+    pub interbase_licensed: bool,
     pub engines: BTreeMap<EngineId, EngineSettings>,
 }
 
@@ -116,6 +119,7 @@ impl Default for AppConfig {
             config_version: CONFIG_VERSION,
             language: None,
             theme: Theme::default(),
+            interbase_licensed: false,
             engines: EngineId::ALL
                 .into_iter()
                 .map(|id| (id, id.engine().default_settings()))
