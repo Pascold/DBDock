@@ -12,7 +12,9 @@ mod sqlite;
 
 use serde::{Deserialize, Serialize};
 
+use crate::compose::{ComposeContext, Yaml};
 use crate::config::EngineSettings;
+use crate::paths::AppPaths;
 
 /// Identifier of a supported engine. Also used as the compose service and
 /// profile name and as the key in `config.toml`.
@@ -118,6 +120,120 @@ pub trait Engine: Sync {
     fn uses(&self, field: Field) -> bool {
         self.fields().contains(&field)
     }
+
+    /// Full image reference for the configured version.
+    fn image(&self, settings: &EngineSettings) -> String;
+
+    /// Compose services (name, definition). The first one is the main
+    /// service named after [`EngineId::key`].
+    fn services(&self, settings: &EngineSettings, ctx: &ComposeContext<'_>) -> Vec<(String, Yaml)>;
+
+    /// Named volumes holding the engine's data (removed by "Reset data").
+    fn volumes(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    /// Named volumes that survive "Reset data" (e.g. the InterBase license).
+    fn kept_volumes(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    /// Services to pass to `docker compose up` when starting the engine.
+    fn start_services(&self) -> &'static [&'static str];
+
+    /// Sample data script (`assets/seed/<engine>.sql`), if supported.
+    fn seed_sql(&self) -> Option<&'static str> {
+        None
+    }
+
+    /// Extra files written next to the seeds (`(file name, contents)`).
+    fn helper_files(&self) -> &'static [(&'static str, &'static str)] {
+        &[]
+    }
+
+    /// True if the image only exists for linux/amd64 (emulated on ARM).
+    fn amd64_only(&self) -> bool {
+        false
+    }
+
+    /// Connection details shown in the connection window.
+    fn connection(&self, settings: &EngineSettings, paths: &AppPaths) -> ConnectionInfo;
+}
+
+/// Ready-to-copy connection details.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConnectionInfo {
+    pub host: String,
+    /// `None` for SQLite.
+    pub port: Option<u16>,
+    /// Database name, server-side path or local file.
+    pub database: String,
+    pub user: String,
+    pub password: String,
+    /// Labelled connection strings, most common first.
+    pub strings: Vec<(&'static str, String)>,
+}
+
+impl ConnectionInfo {
+    fn server(settings: &EngineSettings, database: String, user: &str, password: &str) -> Self {
+        Self {
+            host: HOST.into(),
+            port: Some(settings.port),
+            database,
+            user: user.into(),
+            password: password.into(),
+            strings: Vec::new(),
+        }
+    }
+
+    fn with(mut self, label: &'static str, value: String) -> Self {
+        self.strings.push((label, value));
+        self
+    }
+}
+
+/// Host name used in connection strings.
+pub const HOST: &str = "localhost";
+
+/// Percent-encodes a URL user-info or path component.
+pub fn url_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~') {
+            out.push(char::from(b));
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
+}
+
+/// Connection details of MySQL and MariaDB (same wire protocol).
+fn mysql_family_connection(scheme: &str, s: &EngineSettings) -> ConnectionInfo {
+    ConnectionInfo::server(s, s.database.clone(), &s.user, &s.password)
+        .with("URL", url(scheme, s))
+        .with(
+            "JDBC",
+            format!("jdbc:{scheme}://{HOST}:{}/{}", s.port, s.database),
+        )
+        .with(
+            "ADO.NET",
+            format!(
+                "Server={HOST};Port={};Database={};Uid={};Pwd={}",
+                s.port, s.database, s.user, s.password
+            ),
+        )
+}
+
+/// `scheme://user:password@localhost:port/database`
+fn url(scheme: &str, s: &EngineSettings) -> String {
+    format!(
+        "{scheme}://{}:{}@{HOST}:{}/{}",
+        url_encode(&s.user),
+        url_encode(&s.password),
+        s.port,
+        url_encode(&s.database)
+    )
 }
 
 /// Default credentials shared by most engines.

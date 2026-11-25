@@ -32,4 +32,5 @@ opt-level = 3
 panic = "abort"
 
 [dev-dependencies]
+insta = "1.49.0"
 tempfile = "3.27.0"
