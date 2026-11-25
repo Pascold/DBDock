@@ -1,0 +1,62 @@
+name: Bug report
+description: Something does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please check the [FAQ](https://github.com/Pascold/DBDock#faq--troubleshooting)
+        and the existing issues first. Security problems: see SECURITY.md instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect and what happened instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: database
+    attributes:
+      label: Database
+      multiple: true
+      options:
+        - PostgreSQL
+        - MariaDB
+        - MySQL
+        - MS SQL Server
+        - Firebird
+        - InterBase
+        - SQLite
+        - Not database specific
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DBDock version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    id: docker
+    attributes:
+      label: Docker versions
+      description: Output of `docker version` and `docker compose version`.
+      render: text
+  - type: textarea
+    id: output
+    attributes:
+      label: Command output or logs
+      description: Use the "Show output" button of the error message or the Logs window.
+      render: text
