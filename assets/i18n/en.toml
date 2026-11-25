@@ -1,0 +1,187 @@
+# DBDock UI texts – English.
+# Keys must match pl.toml exactly (checked by `cargo test`).
+# Placeholders in braces, e.g. {engine}, are filled in by the app.
+
+[common]
+copy = "Copy"
+cancel = "Cancel"
+open_folder = "Open folder"
+
+[top]
+start_all = "Start all enabled"
+stop_all = "Stop all"
+open_data_folder = "Open data folder"
+export_compose = "Export compose"
+export_compose_hint = "Save docker-compose.yml to the Downloads folder to use it without DBDock"
+theme_light = "Light theme"
+theme_dark = "Dark theme"
+language = "Language"
+docker_ok = "Docker {docker}, Compose {compose}"
+docker_missing = "Docker is not available"
+
+[status]
+not_created = "Not created"
+stopped = "Stopped"
+starting = "Starting"
+healthy = "Healthy"
+running = "Running"
+error = "Error"
+
+[card]
+port = "port {port}"
+enabled = "Enabled"
+show_output = "Show the command output"
+start = "Start"
+stop = "Stop"
+restart = "Restart"
+settings = "Settings"
+connection = "Connection"
+copy_hint = "Copy the connection string"
+logs = "Logs"
+reset = "Reset data"
+reset_hint = "Delete the container and all data"
+setup_license = "Set up license…"
+create_file = "Create file"
+status_failed = "Status refresh failed: {error}"
+emulation_mac = "x86-64 image: runs under Rosetta emulation (enable it in Docker Desktop). Expect slower starts."
+emulation_other = "x86-64 image: runs under emulation on this ARM computer (slower, needs qemu/binfmt support)."
+
+[op]
+failed = "Failed ({names}): {error}"
+
+[op.running]
+start = "Starting"
+stop = "Stopping"
+restart = "Restarting"
+recreate = "Applying settings"
+reset = "Resetting"
+remove = "Removing"
+
+[op.done]
+start = "Started: {names}"
+stop = "Stopped: {names}"
+restart = "Restarted: {names}"
+recreate = "Settings applied: {names}"
+reset = "Data reset: {names}"
+remove = "Removed: {names}"
+
+[output]
+title = "Command output"
+done = "Done"
+failed = "Failed"
+
+[toast]
+show_output = "Show output"
+dismiss = "Dismiss"
+
+[app]
+no_config_dir = "Cannot determine the configuration folder; using ./DBDock."
+save_failed = "Cannot save settings: {error}"
+compose_failed = "Cannot write docker-compose.yml: {error}"
+none_enabled = "No database is enabled."
+docker_unavailable = "Docker is not available."
+busy = "{engine} is busy, wait for the current operation."
+fix_settings = "Fix the settings first.\n{issues}"
+copied = "Copied to the clipboard"
+settings_saved = "{engine} settings saved"
+create_dir_failed = "Cannot create {path}: {error}"
+open_failed = "Cannot open {path}: {error}"
+exported = "Exported to {path}. It mounts the seed files from {seeds}."
+export_failed = "Cannot export to {path}: {error}"
+delete_failed = "Cannot delete {path}: {error}"
+terminal_failed = "Cannot open a terminal ({error}). Copy the command and run it yourself."
+config_broken = "{error}\nDefaults are used."
+config_broken_backup = "{error}\nDefaults are used; the old file was saved as {path}."
+all_databases = "all databases"
+
+[docker]
+checking = "Checking Docker…"
+unavailable = "Docker is not available"
+not_installed = "DBDock runs the databases in Docker containers, but the docker command was not found. Install Docker Desktop (Windows, macOS) or Docker Engine with the Compose plugin (Linux), then check again."
+daemon_down = "The docker command was found, but the Docker engine does not answer. Start Docker Desktop and wait until the engine is running. On Linux, make sure the docker service runs and your user may use it."
+compose_missing = "Docker works, but the Compose plugin (docker compose) is missing. Docker Desktop includes it; on Linux install the docker-compose-plugin package."
+download_desktop = "Download Docker Desktop"
+install_engine = "Install Docker Engine on Linux"
+check_again = "Check again"
+
+[settings]
+title = "{engine} settings"
+suggestions = "Suggestions"
+image = "Image: {image}"
+show = "Show"
+hide = "Hide"
+seed_label = "Create tables klienci and zamowienia with sample rows"
+recreate_note = "Changes take effect when the container is recreated. Database name, user and passwords are applied only when the data is created for the first time."
+reset_warning = "The data already exists, so the new login settings only take effect after resetting the data (all data in this database is deleted)."
+plain_text = "Passwords are stored in plain text in config.toml: use test passwords only."
+restore_defaults = "Restore defaults"
+apply_reset = "Apply and reset data"
+apply_reset_hint = "Deletes all data of this database"
+apply_restart = "Apply and restart"
+save = "Save"
+
+[settings.field]
+version = "Version (image tag)"
+port = "Host port"
+file_name = "File name"
+database = "Database"
+user = "User"
+password = "Password"
+admin_password = "{user} password"
+seed = "Sample data"
+
+[issue]
+empty = "Required."
+invalid_port = "Enter a port between 1 and 65535."
+port_conflict = "Port already used by {engine}."
+port_in_use = "Another program listens on this port."
+weak_mssql_password = "SQL Server needs at least 8 characters from three of: upper case, lower case, digits, symbols."
+unsupported_characters = "Use ASCII letters, digits and symbols except ' \" \\ ` ; and spaces."
+invalid_identifier = "Use letters, digits and _ (not starting with a digit)."
+invalid_file_name = "Use letters, digits, '.', '-' and '_' only."
+invalid_tag = "Not a valid image tag."
+reserved_user = "root is created automatically; choose another user."
+
+[connection]
+title = "Connect to {engine}"
+host = "Host"
+port = "Port"
+database = "Database"
+user = "User"
+password = "Password"
+database_file = "Database file"
+interbase_guide = "InterBase setup guide"
+note_mssql = "SQL Server uses a self-signed certificate: enable TrustServerCertificate (or -C for sqlcmd) in your client."
+note_firebird = "Wire encryption is enabled. Firebird 3+ clients connect with the default settings; older clients may need WireCrypt = Enabled."
+note_interbase = "InterBase starts without a database: create one with isql as shown in the InterBase setup guide."
+note_sqlite = "SQLite has no server: open the file directly. It is created on the first start."
+
+[logs]
+title = "{engine} logs"
+refresh = "Refresh"
+auto_refresh = "Auto refresh"
+last_lines = "last {count} lines"
+empty = "No log output yet."
+
+[reset]
+title = "Reset {engine}?"
+text = "The container and its data volume are deleted, including every table and row. The database is initialised again, with the current settings, on the next start."
+text_sqlite = "The database file is deleted. It is created again, with the current settings, on the next start."
+license_kept = "The registered license is kept."
+confirm = "Delete data"
+
+[interbase]
+title = "InterBase setup"
+intro = "InterBase is commercial software. The official Docker image needs a license, and the free Developer Edition license is enough for testing."
+step1 = "1. Get a free Developer Edition license"
+step1_text = "Register on the Embarcadero website. The serial number arrives by e-mail; keep your Embarcadero account (EDN) login at hand as well."
+license_link = "InterBase Developer Edition"
+step2 = "2. Register the license (once)"
+step2_text = "Run this command in a terminal. The license manager starts and asks for the serial number and your account. The license is stored in the dbdock_interbase-license volume and survives resets."
+open_terminal = "Open a terminal with this command"
+emulation = "The image is x86-64 only and runs under emulation on this computer."
+step3 = "3. Start InterBase"
+licensed = "License registered – start normally"
+step4 = "4. Create a database"
+step4_isql = "InterBase starts without a database. Open isql in the container:"
+step4_create = "and create one (stored in the persistent /opt/interbase volume):"

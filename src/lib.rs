@@ -8,6 +8,7 @@ pub mod compose;
 pub mod config;
 pub mod docker;
 pub mod engines;
+pub mod i18n;
 pub mod paths;
 pub mod terminal;
 pub mod ui;

@@ -1,0 +1,187 @@
+# Teksty interfejsu DBDock – polski.
+# Klucze muszą być identyczne jak w en.toml (sprawdza to `cargo test`).
+# Pola w nawiasach klamrowych, np. {engine}, wypełnia aplikacja.
+
+[common]
+copy = "Kopiuj"
+cancel = "Anuluj"
+open_folder = "Otwórz folder"
+
+[top]
+start_all = "Uruchom włączone"
+stop_all = "Zatrzymaj wszystkie"
+open_data_folder = "Otwórz folder danych"
+export_compose = "Eksportuj compose"
+export_compose_hint = "Zapisz docker-compose.yml w folderze Pobrane, żeby używać go bez DBDock"
+theme_light = "Jasny motyw"
+theme_dark = "Ciemny motyw"
+language = "Język"
+docker_ok = "Docker {docker}, Compose {compose}"
+docker_missing = "Docker jest niedostępny"
+
+[status]
+not_created = "Nieutworzona"
+stopped = "Zatrzymana"
+starting = "Uruchamianie"
+healthy = "Gotowa"
+running = "Działa"
+error = "Błąd"
+
+[card]
+port = "port {port}"
+enabled = "Włączona"
+show_output = "Pokaż wyjście polecenia"
+start = "Uruchom"
+stop = "Zatrzymaj"
+restart = "Restartuj"
+settings = "Ustawienia"
+connection = "Połączenie"
+copy_hint = "Kopiuj connection string"
+logs = "Logi"
+reset = "Resetuj dane"
+reset_hint = "Usuń kontener i wszystkie dane"
+setup_license = "Skonfiguruj licencję…"
+create_file = "Utwórz plik"
+status_failed = "Nie udało się odświeżyć statusu: {error}"
+emulation_mac = "Obraz x86-64: działa w emulacji Rosetta (włącz ją w Docker Desktop). Start będzie wolniejszy."
+emulation_other = "Obraz x86-64: działa w emulacji na tym komputerze ARM (wolniej, wymaga qemu/binfmt)."
+
+[op]
+failed = "Błąd ({names}): {error}"
+
+[op.running]
+start = "Uruchamianie"
+stop = "Zatrzymywanie"
+restart = "Restartowanie"
+recreate = "Stosowanie ustawień"
+reset = "Resetowanie"
+remove = "Usuwanie"
+
+[op.done]
+start = "Uruchomiono: {names}"
+stop = "Zatrzymano: {names}"
+restart = "Zrestartowano: {names}"
+recreate = "Zastosowano ustawienia: {names}"
+reset = "Zresetowano dane: {names}"
+remove = "Usunięto: {names}"
+
+[output]
+title = "Wyjście polecenia"
+done = "Gotowe"
+failed = "Błąd"
+
+[toast]
+show_output = "Pokaż wyjście"
+dismiss = "Zamknij"
+
+[app]
+no_config_dir = "Nie można ustalić folderu konfiguracji; używam ./DBDock."
+save_failed = "Nie można zapisać ustawień: {error}"
+compose_failed = "Nie można zapisać docker-compose.yml: {error}"
+none_enabled = "Żadna baza nie jest włączona."
+docker_unavailable = "Docker jest niedostępny."
+busy = "{engine} jest zajęta, poczekaj na koniec bieżącej operacji."
+fix_settings = "Najpierw popraw ustawienia.\n{issues}"
+copied = "Skopiowano do schowka"
+settings_saved = "Zapisano ustawienia: {engine}"
+create_dir_failed = "Nie można utworzyć {path}: {error}"
+open_failed = "Nie można otworzyć {path}: {error}"
+exported = "Wyeksportowano do {path}. Plik montuje skrypty seed z {seeds}."
+export_failed = "Nie można wyeksportować do {path}: {error}"
+delete_failed = "Nie można usunąć {path}: {error}"
+terminal_failed = "Nie można otworzyć terminala ({error}). Skopiuj polecenie i uruchom je samodzielnie."
+config_broken = "{error}\nUżyto ustawień domyślnych."
+config_broken_backup = "{error}\nUżyto ustawień domyślnych; stary plik zapisano jako {path}."
+all_databases = "wszystkie bazy"
+
+[docker]
+checking = "Sprawdzanie Dockera…"
+unavailable = "Docker jest niedostępny"
+not_installed = "DBDock uruchamia bazy w kontenerach Dockera, ale nie znaleziono polecenia docker. Zainstaluj Docker Desktop (Windows, macOS) albo Docker Engine z wtyczką Compose (Linux) i sprawdź ponownie."
+daemon_down = "Polecenie docker istnieje, ale silnik Dockera nie odpowiada. Uruchom Docker Desktop i poczekaj, aż silnik wystartuje. Na Linuksie sprawdź, czy usługa docker działa i czy Twój użytkownik ma do niej dostęp."
+compose_missing = "Docker działa, ale brakuje wtyczki Compose (docker compose). Docker Desktop ją zawiera; na Linuksie zainstaluj pakiet docker-compose-plugin."
+download_desktop = "Pobierz Docker Desktop"
+install_engine = "Zainstaluj Docker Engine na Linuksie"
+check_again = "Sprawdź ponownie"
+
+[settings]
+title = "Ustawienia: {engine}"
+suggestions = "Podpowiedzi"
+image = "Obraz: {image}"
+show = "Pokaż"
+hide = "Ukryj"
+seed_label = "Utwórz tabele klienci i zamowienia z przykładowymi danymi"
+recreate_note = "Zmiany zadziałają po ponownym utworzeniu kontenera. Nazwa bazy, użytkownik i hasła są stosowane tylko przy pierwszym tworzeniu danych."
+reset_warning = "Dane już istnieją, więc nowe dane logowania zadziałają dopiero po resecie danych (wszystkie dane tej bazy zostaną usunięte)."
+plain_text = "Hasła są zapisywane jawnym tekstem w config.toml: używaj tylko haseł testowych."
+restore_defaults = "Przywróć domyślne"
+apply_reset = "Zastosuj i zresetuj dane"
+apply_reset_hint = "Usuwa wszystkie dane tej bazy"
+apply_restart = "Zastosuj i zrestartuj"
+save = "Zapisz"
+
+[settings.field]
+version = "Wersja (tag obrazu)"
+port = "Port na hoście"
+file_name = "Nazwa pliku"
+database = "Baza danych"
+user = "Użytkownik"
+password = "Hasło"
+admin_password = "Hasło {user}"
+seed = "Dane testowe"
+
+[issue]
+empty = "Pole wymagane."
+invalid_port = "Podaj port od 1 do 65535."
+port_conflict = "Port jest już używany przez: {engine}."
+port_in_use = "Inny program nasłuchuje na tym porcie."
+weak_mssql_password = "SQL Server wymaga co najmniej 8 znaków z trzech kategorii: wielkie litery, małe litery, cyfry, symbole."
+unsupported_characters = "Używaj liter ASCII, cyfr i symboli z wyjątkiem ' \" \\ ` ; i spacji."
+invalid_identifier = "Używaj liter, cyfr i _ (nie zaczynaj od cyfry)."
+invalid_file_name = "Używaj tylko liter, cyfr, '.', '-' i '_'."
+invalid_tag = "Nieprawidłowy tag obrazu."
+reserved_user = "Użytkownik root jest tworzony automatycznie; wybierz innego."
+
+[connection]
+title = "Połączenie: {engine}"
+host = "Host"
+port = "Port"
+database = "Baza danych"
+user = "Użytkownik"
+password = "Hasło"
+database_file = "Plik bazy"
+interbase_guide = "Przewodnik konfiguracji InterBase"
+note_mssql = "SQL Server używa certyfikatu z podpisem własnym: włącz TrustServerCertificate (albo -C w sqlcmd) w kliencie."
+note_firebird = "Szyfrowanie połączenia jest włączone. Klienci Firebird 3+ łączą się z domyślnymi ustawieniami; starsi mogą wymagać WireCrypt = Enabled."
+note_interbase = "InterBase startuje bez bazy: utwórz ją w isql, jak pokazuje przewodnik konfiguracji InterBase."
+note_sqlite = "SQLite nie ma serwera: otwórz plik bezpośrednio. Plik powstaje przy pierwszym uruchomieniu."
+
+[logs]
+title = "Logi: {engine}"
+refresh = "Odśwież"
+auto_refresh = "Odświeżaj automatycznie"
+last_lines = "ostatnie {count} linii"
+empty = "Brak logów."
+
+[reset]
+title = "Zresetować {engine}?"
+text = "Kontener i jego wolumen z danymi zostaną usunięte razem ze wszystkimi tabelami i wierszami. Baza zostanie utworzona od nowa, z bieżącymi ustawieniami, przy następnym uruchomieniu."
+text_sqlite = "Plik bazy zostanie usunięty. Powstanie od nowa, z bieżącymi ustawieniami, przy następnym uruchomieniu."
+license_kept = "Zarejestrowana licencja zostanie zachowana."
+confirm = "Usuń dane"
+
+[interbase]
+title = "Konfiguracja InterBase"
+intro = "InterBase to oprogramowanie komercyjne. Oficjalny obraz Dockera wymaga licencji, a do testów wystarczy darmowa licencja Developer Edition."
+step1 = "1. Zdobądź darmową licencję Developer Edition"
+step1_text = "Zarejestruj się na stronie Embarcadero. Numer seryjny przyjdzie e-mailem; przygotuj też login do konta Embarcadero (EDN)."
+license_link = "InterBase Developer Edition"
+step2 = "2. Zarejestruj licencję (jednorazowo)"
+step2_text = "Uruchom to polecenie w terminalu. Menedżer licencji zapyta o numer seryjny i konto. Licencja trafi do wolumenu dbdock_interbase-license i przetrwa reset danych."
+open_terminal = "Otwórz terminal z tym poleceniem"
+emulation = "Obraz jest tylko dla x86-64 i działa na tym komputerze w emulacji."
+step3 = "3. Uruchom InterBase"
+licensed = "Licencja zarejestrowana – uruchom normalnie"
+step4 = "4. Utwórz bazę danych"
+step4_isql = "InterBase startuje bez bazy. Otwórz isql w kontenerze:"
+step4_create = "i utwórz bazę (zapisaną w trwałym wolumenie /opt/interbase):"
