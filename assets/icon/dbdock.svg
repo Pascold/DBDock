@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- DBDock icon: a database cylinder resting on a dock above the water. -->
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E3A8A"/>
+      <stop offset="1" stop-color="#0E7490"/>
+    </linearGradient>
+    <linearGradient id="cylinder" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E0F2FE"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#background)"/>
+  <path d="M68 64 v86 c0 15 27 26 60 26 s60 -11 60 -26 v-86 z" fill="url(#cylinder)"/>
+  <path d="M68 96 c0 15 27 26 60 26 s60 -11 60 -26" fill="none" stroke="#0E7490" stroke-width="6" stroke-opacity="0.35"/>
+  <path d="M68 124 c0 15 27 26 60 26 s60 -11 60 -26" fill="none" stroke="#0E7490" stroke-width="6" stroke-opacity="0.35"/>
+  <ellipse cx="128" cy="64" rx="60" ry="22" fill="#FFFFFF"/>
+  <ellipse cx="128" cy="64" rx="44" ry="13" fill="#BAE6FD"/>
+  <rect x="40" y="180" width="176" height="16" rx="8" fill="#F59E0B"/>
+  <rect x="62" y="196" width="12" height="22" rx="3" fill="#F59E0B"/>
+  <rect x="182" y="196" width="12" height="22" rx="3" fill="#F59E0B"/>
+  <path d="M44 214 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#7DD3FC" stroke-width="6" stroke-linecap="round"/>
+</svg>
