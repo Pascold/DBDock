@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------------------
+# Rust
+# ---------------------------------------------------------------------------
+# Build output
+/target/
+# rustfmt backups
+**/*.rs.bk
+# MSVC debug symbols
+*.pdb
+# Pending insta snapshots (accepted snapshots are committed)
+*.snap.new
+*.pending-snap
+# Cargo.lock is committed on purpose: DBDock is an application.
+
+# ---------------------------------------------------------------------------
+# IDEs and editors
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.fleet/
+.zed/
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# Operating systems
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ---------------------------------------------------------------------------
+# Local files
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.log
+/dist/
+
+# Local test databases (fixtures under assets/ are allowed)
+*.db
+*.sqlite
+*.fdb
+*.ib
+!/assets/**/*.db
+!/assets/**/*.sqlite
+!/assets/**/*.fdb
+!/assets/**/*.ib
