@@ -1,0 +1,32 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-11-26
+
+### Added
+
+- One-click start, stop, restart and reset of test database servers in Docker:
+  PostgreSQL, MariaDB, MySQL, MS SQL Server, Firebird, InterBase and SQLite.
+- Generated `docker-compose.yml` (project `dbdock`) with healthchecks, named
+  volumes and ports published on `127.0.0.1` only; export for use without the
+  app.
+- Optional sample data (`klienci`, `zamowienia`, `v_podsumowanie`) with Polish
+  characters for encoding tests.
+- Per-database settings with live validation: port conflicts, ports taken by
+  other programs, the SQL Server password policy and malformed values.
+- Connection window with ready-to-copy connection strings (URL, JDBC, ADO.NET,
+  Firebird, sqlcmd) and a logs window with the last 500 lines.
+- InterBase first-run wizard for the free Developer Edition license.
+- English and Polish user interface, light and dark theme.
+- Clear guidance when Docker or the Compose plugin is missing.
+- Release builds for Windows x86_64, Linux x86_64 and macOS (x86_64, aarch64)
+  with SHA-256 checksums.
+
+[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Pascold/DBDock/releases/tag/v0.1.0
