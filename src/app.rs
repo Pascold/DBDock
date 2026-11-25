@@ -130,6 +130,7 @@ impl DbDockApp {
             interbase_wizard: false,
             clipboard: None,
         };
+        crate::ui::theme::apply_style(&cc.egui_ctx);
         app.apply_theme(&cc.egui_ctx);
         app
     }

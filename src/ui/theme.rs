@@ -50,3 +50,16 @@ pub fn status_color(status: EngineStatus, dark: bool) -> Color32 {
 pub const OK_COLOR: Color32 = Color32::from_rgb(0x3D, 0xB8, 0x5C);
 pub const ERROR_COLOR: Color32 = Color32::from_rgb(0xE0, 0x4F, 0x4F);
 pub const WARNING_COLOR: Color32 = Color32::from_rgb(0xE6, 0xA2, 0x17);
+
+/// Spacing and shapes shared by the light and dark themes.
+pub fn apply_style(ctx: &egui::Context) {
+    ctx.all_styles_mut(|style| {
+        style.spacing.button_padding = egui::vec2(8.0, 4.0);
+        style.spacing.item_spacing = egui::vec2(8.0, 6.0);
+        style.spacing.window_margin = egui::Margin::same(14);
+        style.visuals.window_corner_radius = egui::CornerRadius::same(10);
+        style.visuals.widgets.inactive.corner_radius = egui::CornerRadius::same(6);
+        style.visuals.widgets.hovered.corner_radius = egui::CornerRadius::same(6);
+        style.visuals.widgets.active.corner_radius = egui::CornerRadius::same(6);
+    });
+}

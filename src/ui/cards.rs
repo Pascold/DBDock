@@ -9,7 +9,9 @@ use crate::docker::worker::OpKind;
 use crate::engines::{EngineId, Field};
 use crate::i18n::{t, tf};
 
-const CARD_WIDTH: f32 = 300.0;
+const MIN_CARD_WIDTH: f32 = 300.0;
+/// Inner margins and stroke of the card frame.
+const CARD_FRAME: f32 = 26.0;
 const CARD_SPACING: f32 = 12.0;
 
 pub fn status_text(status: EngineStatus) -> &'static str {
@@ -36,15 +38,19 @@ impl DbDockApp {
                         );
                         ui.add_space(6.0);
                     }
-                    let columns = ((ui.available_width() + CARD_SPACING)
-                        / (CARD_WIDTH + CARD_SPACING))
+                    let available = ui.available_width();
+                    let columns = ((available + CARD_SPACING) / (MIN_CARD_WIDTH + CARD_SPACING))
                         .floor()
                         .max(1.0) as usize;
+                    // Stretch the cards so the columns fill the width.
+                    let card_width = ((available - CARD_SPACING * (columns - 1) as f32)
+                        / columns as f32)
+                        .floor();
                     for row in EngineId::ALL.chunks(columns) {
                         ui.horizontal_top(|ui| {
                             ui.spacing_mut().item_spacing.x = CARD_SPACING;
                             for &id in row {
-                                self.card(ui, id, actions);
+                                self.card(ui, id, card_width, actions);
                             }
                         });
                         ui.add_space(CARD_SPACING);
@@ -53,7 +59,7 @@ impl DbDockApp {
         });
     }
 
-    fn card(&self, ui: &mut egui::Ui, id: EngineId, actions: &mut Vec<Action>) {
+    fn card(&self, ui: &mut egui::Ui, id: EngineId, width: f32, actions: &mut Vec<Action>) {
         let engine = id.engine();
         let settings = self.config.engine(id);
         let status = self.status(id);
@@ -69,7 +75,7 @@ impl DbDockApp {
             .inner_margin(12.0);
         frame.show(ui, |ui| {
             ui.vertical(|ui| {
-                ui.set_width(CARD_WIDTH - 24.0);
+                ui.set_width(width - CARD_FRAME);
                 if !settings.enabled {
                     ui.multiply_opacity(0.6);
                 }
