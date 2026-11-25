@@ -12,6 +12,7 @@ categories = ["development-tools", "gui"]
 publish = false
 
 [dependencies]
+arboard = { version = "3.7.0", default-features = false }
 directories = "6.0.0"
 eframe = { version = "0.37", default-features = false, features = [
   "default_fonts",
@@ -20,6 +21,7 @@ eframe = { version = "0.37", default-features = false, features = [
   "x11",
 ] }
 egui = "0.37"
+open = "5.4.5"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 thiserror = "2.0.21"

@@ -147,6 +147,32 @@ impl DbDockApp {
                     {
                         actions.push(Action::OpenSettings(id));
                     }
+                    if ui.button("Connection").clicked() {
+                        actions.push(Action::OpenConnection(id));
+                    }
+                    if ui
+                        .button("Copy")
+                        .on_hover_text("Copy the connection string")
+                        .clicked()
+                    {
+                        actions.push(Action::CopyConnection(id));
+                    }
+                    if ui
+                        .add_enabled(status.is_created(), egui::Button::new("Logs"))
+                        .clicked()
+                    {
+                        actions.push(Action::OpenLogs(id));
+                    }
+                    if ui
+                        .add_enabled(
+                            !busy && status.is_created(),
+                            egui::Button::new("Reset data"),
+                        )
+                        .on_hover_text("Delete the container and all data")
+                        .clicked()
+                    {
+                        actions.push(Action::ConfirmReset(id));
+                    }
                 });
             })
         });

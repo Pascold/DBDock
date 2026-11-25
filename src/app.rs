@@ -13,6 +13,7 @@ use crate::engines::EngineId;
 use crate::paths::AppPaths;
 use crate::ui::settings::{issue_text, SettingsDraft, SettingsOutcome};
 use crate::ui::toasts::Toasts;
+use crate::ui::windows::LogsWindow;
 
 /// How many finished operations are remembered for the output window.
 const KEPT_OPERATIONS: usize = 20;
@@ -52,6 +53,17 @@ pub enum Action {
     SetEnabled(EngineId, bool),
     ShowOutput(OpId),
     OpenSettings(EngineId),
+    OpenConnection(EngineId),
+    OpenLogs(EngineId),
+    /// Copy text to the clipboard.
+    Copy(String),
+    /// Copy the main connection string of an engine.
+    CopyConnection(EngineId),
+    /// Ask before deleting data.
+    ConfirmReset(EngineId),
+    ResetConfirmed(EngineId),
+    OpenFolder(PathBuf),
+    ExportCompose,
     RecheckDocker,
     SetTheme(Theme),
 }
@@ -71,6 +83,11 @@ pub struct DbDockApp {
     /// Operation shown in the output window.
     pub(crate) output_window: Option<OpId>,
     pub(crate) settings: Option<SettingsDraft>,
+    pub(crate) connection_window: Option<EngineId>,
+    pub(crate) logs_window: Option<LogsWindow>,
+    pub(crate) confirm_reset: Option<EngineId>,
+    /// Kept alive: on X11 the clipboard content disappears with its owner.
+    clipboard: Option<arboard::Clipboard>,
 }
 
 impl DbDockApp {
@@ -99,6 +116,10 @@ impl DbDockApp {
             toasts,
             output_window: None,
             settings: None,
+            connection_window: None,
+            logs_window: None,
+            confirm_reset: None,
+            clipboard: None,
         };
         app.apply_theme(&cc.egui_ctx);
         app
@@ -173,7 +194,13 @@ impl DbDockApp {
                     }
                 }
                 Event::Finished { op, result } => self.on_finished(op, result),
-                Event::Logs { .. } => {}
+                Event::Logs { engine, result } => {
+                    if let Some(logs) = self.logs_window.as_mut().filter(|l| l.engine == engine) {
+                        logs.text = Some(result);
+                        logs.loading = false;
+                        logs.fetched_at = Some(std::time::Instant::now());
+                    }
+                }
             }
         }
     }
@@ -263,6 +290,21 @@ impl DbDockApp {
             }
             Action::SetEnabled(id, enabled) => self.set_enabled(id, enabled),
             Action::ShowOutput(op) => self.output_window = Some(op),
+            Action::OpenConnection(id) => self.connection_window = Some(id),
+            Action::OpenLogs(id) => self.logs_window = Some(LogsWindow::new(id)),
+            Action::Copy(text) => self.copy(ctx, text),
+            Action::CopyConnection(id) => {
+                let info = id.engine().connection(self.config.engine(id), &self.paths);
+                if let Some((_, value)) = info.strings.into_iter().next() {
+                    self.copy(ctx, value);
+                }
+            }
+            Action::ConfirmReset(id) => self.confirm_reset = Some(id),
+            Action::ResetConfirmed(id) => {
+                self.reset(id);
+            }
+            Action::OpenFolder(path) => self.open_folder(&path),
+            Action::ExportCompose => self.export_compose(),
             Action::OpenSettings(id) => {
                 self.settings = Some(SettingsDraft::new(id, self.config.engine(id)));
             }
@@ -317,6 +359,58 @@ impl DbDockApp {
             _ => self
                 .toasts
                 .success(format!("{} settings saved", id.display_name())),
+        }
+    }
+
+    fn copy(&mut self, ctx: &egui::Context, text: String) {
+        if self.clipboard.is_none() {
+            self.clipboard = arboard::Clipboard::new().ok();
+        }
+        let copied = self
+            .clipboard
+            .as_mut()
+            .is_some_and(|c| c.set_text(text.clone()).is_ok());
+        if !copied {
+            // Fall back to the clipboard integration of the window backend.
+            ctx.copy_text(text);
+        }
+        self.toasts.info("Copied to the clipboard");
+    }
+
+    fn open_folder(&mut self, path: &std::path::Path) {
+        if let Err(e) = std::fs::create_dir_all(path) {
+            self.toasts
+                .error(format!("Cannot create {}: {e}", path.display()));
+            return;
+        }
+        if let Err(e) = open::that_detached(path) {
+            self.toasts
+                .error(format!("Cannot open {}: {e}", path.display()));
+        }
+    }
+
+    /// Copies the generated compose file to the Downloads folder so it can be
+    /// used without DBDock.
+    fn export_compose(&mut self) {
+        let Some(file) = self.write_compose() else {
+            return;
+        };
+        let target_dir = directories::UserDirs::new()
+            .and_then(|d| d.download_dir().map(std::path::Path::to_path_buf))
+            .unwrap_or_else(|| self.paths.base().to_path_buf());
+        let target = target_dir.join("dbdock-docker-compose.yml");
+        match std::fs::copy(&file, &target) {
+            Ok(_) => {
+                self.toasts.success(format!(
+                    "Exported to {}. It mounts seed files from {}.",
+                    target.display(),
+                    self.paths.seed_dir().display()
+                ));
+                self.open_folder(&target_dir);
+            }
+            Err(e) => self
+                .toasts
+                .error(format!("Cannot export to {}: {e}", target.display())),
         }
     }
 
@@ -405,6 +499,9 @@ impl eframe::App for DbDockApp {
             check => crate::ui::docker_missing::show(ui, check.as_ref(), &mut actions),
         }
         self.settings_window_ui(&ctx);
+        self.connection_window_ui(&ctx, &mut actions);
+        self.logs_window_ui(&ctx);
+        self.reset_confirm_ui(&ctx, &mut actions);
         self.output_window_ui(&ctx);
         self.toasts.show(&ctx, &mut actions);
 

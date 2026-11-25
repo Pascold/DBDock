@@ -5,6 +5,7 @@ pub mod docker_missing;
 pub mod settings;
 pub mod theme;
 pub mod toasts;
+pub mod windows;
 
 use egui::RichText;
 
@@ -36,6 +37,17 @@ impl DbDockApp {
                     .clicked()
                 {
                     actions.push(Action::StopAll);
+                }
+                ui.separator();
+                if ui.button("Open data folder").clicked() {
+                    actions.push(Action::OpenFolder(self.paths.base().to_path_buf()));
+                }
+                if ui
+                    .button("Export compose")
+                    .on_hover_text("Save docker-compose.yml to the Downloads folder")
+                    .clicked()
+                {
+                    actions.push(Action::ExportCompose);
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
