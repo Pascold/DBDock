@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <!-- Source of docs/social-preview.png (1280x640), rendered with resvg using the Segoe UI font. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#0F2A3D"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.22" cy="0.5" r="0.45">
+      <stop offset="0" stop-color="#0E7490" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#0E7490" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
+  <g transform="translate(110 170) scale(1.17)">
+      <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E3A8A"/>
+      <stop offset="1" stop-color="#0E7490"/>
+    </linearGradient>
+    <linearGradient id="cylinder" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E0F2FE"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#background)"/>
+  <path d="M68 64 v86 c0 15 27 26 60 26 s60 -11 60 -26 v-86 z" fill="url(#cylinder)"/>
+  <path d="M68 96 c0 15 27 26 60 26 s60 -11 60 -26" fill="none" stroke="#0E7490" stroke-width="6" stroke-opacity="0.35"/>
+  <path d="M68 124 c0 15 27 26 60 26 s60 -11 60 -26" fill="none" stroke="#0E7490" stroke-width="6" stroke-opacity="0.35"/>
+  <ellipse cx="128" cy="64" rx="60" ry="22" fill="#FFFFFF"/>
+  <ellipse cx="128" cy="64" rx="44" ry="13" fill="#BAE6FD"/>
+  <rect x="40" y="180" width="176" height="16" rx="8" fill="#F59E0B"/>
+  <rect x="62" y="196" width="12" height="22" rx="3" fill="#F59E0B"/>
+  <rect x="182" y="196" width="12" height="22" rx="3" fill="#F59E0B"/>
+  <path d="M44 214 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#7DD3FC" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="470" y="260" font-size="112" font-weight="700" fill="#FFFFFF">DBDock</text>
+    <text x="474" y="330" font-size="38" fill="#BAE6FD">One click to start test databases in Docker</text>
+    <text x="474" y="380" font-size="28" fill="#7DD3FC" fill-opacity="0.8">Desktop app for Windows, macOS and Linux · written in Rust</text>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="600" fill="#FFFFFF">
+    <rect x="474" y="430" width="150" height="46" rx="23" fill="#336791"/><text x="549" y="461" text-anchor="middle">PostgreSQL</text>
+    <rect x="636" y="430" width="128" height="46" rx="23" fill="#C0765A"/><text x="700" y="461" text-anchor="middle">MariaDB</text>
+    <rect x="776" y="430" width="112" height="46" rx="23" fill="#00758F"/><text x="832" y="461" text-anchor="middle">MySQL</text>
+    <rect x="900" y="430" width="160" height="46" rx="23" fill="#CC2927"/><text x="980" y="461" text-anchor="middle">SQL Server</text>
+    <rect x="474" y="490" width="130" height="46" rx="23" fill="#F26B1D"/><text x="539" y="521" text-anchor="middle">Firebird</text>
+    <rect x="616" y="490" width="138" height="46" rx="23" fill="#8E44AD"/><text x="685" y="521" text-anchor="middle">InterBase</text>
+    <rect x="766" y="490" width="112" height="46" rx="23" fill="#0F80CC"/><text x="822" y="521" text-anchor="middle">SQLite</text>
+  </g>
+</svg>
