@@ -1,5 +1,7 @@
 //! User settings: model, defaults, migrations and persistence.
 
+pub mod validate;
+
 use std::collections::BTreeMap;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
