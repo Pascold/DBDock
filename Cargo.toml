@@ -32,6 +32,8 @@ toml = "1.2.3"
 lto = true
 codegen-units = 1
 strip = true
+# Measured on Windows x86_64: opt-level = "z" gives 5.0 MiB instead of
+# 5.3 MiB (-6 %), which is not worth the slower UI code.
 opt-level = 3
 panic = "abort"
 

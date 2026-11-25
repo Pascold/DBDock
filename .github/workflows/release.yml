@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build, e.g. v0.1.0
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - name: linux-x86_64
+            # The oldest supported runner keeps the glibc requirement low.
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - name: macos-x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+          - name: macos-aarch64
+            os: macos-latest
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Check that the tag matches Cargo.toml
+        shell: bash
+        run: |
+          version=$(grep -m1 '^version = ' Cargo.toml | cut -d '"' -f2)
+          if [ "v$version" != "$TAG" ]; then
+            echo "Tag $TAG does not match Cargo.toml version $version" >&2
+            exit 1
+          fi
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libxkbcommon-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir dist
+          asset="dbdock-$TAG-${{ matrix.name }}.exe"
+          cp "target/${{ matrix.target }}/release/dbdock.exe" "dist/$asset"
+          (cd dist && sha256sum "$asset" > "$asset.sha256")
+
+      - name: Package (Linux, macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          name="dbdock-$TAG-${{ matrix.name }}"
+          mkdir -p "dist/$name"
+          cp "target/${{ matrix.target }}/release/dbdock" "dist/$name/"
+          cp README.md LICENSE-MIT LICENSE-APACHE CHANGELOG.md "dist/$name/"
+          (cd dist && tar czf "$name.tar.gz" "$name" && rm -r "$name")
+          (cd dist && shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Collect checksums
+        run: |
+          cd dist
+          cat *.sha256 > SHA256SUMS.txt
+          rm *.sha256
+          cat SHA256SUMS.txt
+
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          version="${TAG#v}"
+          awk -v version="$version" '
+            /^## \[/ { if (found) exit; if (index($0, "[" version "]")) { found = 1; next } }
+            /^\[[^]]+\]: / { if (found) exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "No CHANGELOG.md section for $version" >&2
+            exit 1
+          fi
+          cat notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: DBDock ${{ env.TAG }}
+          body_path: notes.md
+          files: dist/*
+          fail_on_unmatched_files: true
