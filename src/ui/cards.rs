@@ -140,6 +140,14 @@ impl DbDockApp {
                         actions.push(Action::Op(OpKind::Restart, vec![id]));
                     }
                 });
+                ui.horizontal_wrapped(|ui| {
+                    if ui
+                        .add_enabled(!busy, egui::Button::new("Settings"))
+                        .clicked()
+                    {
+                        actions.push(Action::OpenSettings(id));
+                    }
+                });
             })
         });
     }

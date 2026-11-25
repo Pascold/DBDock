@@ -11,6 +11,7 @@ use crate::docker::worker::{Docker, Event, OpId, OpKind};
 use crate::docker::DockerCheck;
 use crate::engines::EngineId;
 use crate::paths::AppPaths;
+use crate::ui::settings::{issue_text, SettingsDraft, SettingsOutcome};
 use crate::ui::toasts::Toasts;
 
 /// How many finished operations are remembered for the output window.
@@ -27,6 +28,8 @@ pub struct Operation {
     pub result: Option<Result<(), String>>,
     /// Engine to disable once the operation succeeds.
     pub disable_after: Option<EngineId>,
+    /// Operation to start on the same engines once this one succeeds.
+    pub then: Option<OpKind>,
 }
 
 impl Operation {
@@ -48,6 +51,7 @@ pub enum Action {
     StopAll,
     SetEnabled(EngineId, bool),
     ShowOutput(OpId),
+    OpenSettings(EngineId),
     RecheckDocker,
     SetTheme(Theme),
 }
@@ -66,6 +70,7 @@ pub struct DbDockApp {
     pub(crate) toasts: Toasts,
     /// Operation shown in the output window.
     pub(crate) output_window: Option<OpId>,
+    pub(crate) settings: Option<SettingsDraft>,
 }
 
 impl DbDockApp {
@@ -93,6 +98,7 @@ impl DbDockApp {
             operations: Vec::new(),
             toasts,
             output_window: None,
+            settings: None,
         };
         app.apply_theme(&cc.egui_ctx);
         app
@@ -200,6 +206,8 @@ impl DbDockApp {
         let op = &mut self.operations[index];
         op.result = Some(result.clone());
         let disable = op.disable_after.take();
+        let then = op.then.take();
+        let engines = op.engines.clone();
         let names = engine_names(&op.engines);
         let kind = op.kind;
 
@@ -212,7 +220,11 @@ impl DbDockApp {
                         self.write_compose();
                     }
                 }
-                self.toasts.success(format!("{}: {names}", done_text(kind)));
+                if let Some(next) = then {
+                    self.start_op(next, engines, None);
+                } else {
+                    self.toasts.success(format!("{}: {names}", done_text(kind)));
+                }
             }
             Err(e) => self.toasts.error_with_output(
                 format!("{} {names} failed: {}", kind_text(kind), last_line(&e)),
@@ -251,6 +263,9 @@ impl DbDockApp {
             }
             Action::SetEnabled(id, enabled) => self.set_enabled(id, enabled),
             Action::ShowOutput(op) => self.output_window = Some(op),
+            Action::OpenSettings(id) => {
+                self.settings = Some(SettingsDraft::new(id, self.config.engine(id)));
+            }
             Action::RecheckDocker => {
                 self.docker_check = None;
                 self.docker.check();
@@ -272,6 +287,61 @@ impl DbDockApp {
         }
         self.config.engine_mut(id).enabled = enabled;
         self.save_config();
+    }
+
+    fn settings_window_ui(&mut self, ctx: &egui::Context) {
+        let Some(mut draft) = self.settings.take() else {
+            return;
+        };
+        let id = draft.engine;
+        let status = self.status(id);
+        let outcome = draft.show(ctx, &self.config, status);
+        if outcome == SettingsOutcome::Open {
+            self.settings = Some(draft);
+            return;
+        }
+        if outcome == SettingsOutcome::Cancel {
+            return;
+        }
+
+        // The enabled switch lives on the card; keep its current value.
+        let mut settings = draft.settings;
+        settings.enabled = self.config.engine(id).enabled;
+        *self.config.engine_mut(id) = settings;
+        self.save_config();
+        match outcome {
+            SettingsOutcome::SaveAndRecreate => {
+                self.start_op(OpKind::Recreate, vec![id], None);
+            }
+            SettingsOutcome::SaveAndReset => self.reset_and_start(id),
+            _ => self
+                .toasts
+                .success(format!("{} settings saved", id.display_name())),
+        }
+    }
+
+    /// Deletes the data of `id` and starts it again with the current settings.
+    pub(crate) fn reset_and_start(&mut self, id: EngineId) {
+        if let Some(op) = self.reset(id) {
+            if let Some(op) = self.operations.iter_mut().find(|o| o.id == op) {
+                op.then = Some(OpKind::Start);
+            }
+        }
+    }
+
+    /// Removes the container and data of `id`.
+    pub(crate) fn reset(&mut self, id: EngineId) -> Option<OpId> {
+        if id == EngineId::Sqlite {
+            let file = crate::engines::sqlite::database_file(self.config.engine(id), &self.paths);
+            if let Err(e) = std::fs::remove_file(&file) {
+                if e.kind() != std::io::ErrorKind::NotFound {
+                    self.toasts
+                        .error(format!("Cannot delete {}: {e}", file.display()));
+                    return None;
+                }
+            }
+        }
+        self.start_op(OpKind::Reset, vec![id], None)
     }
 
     /// Validates, writes the compose file and starts the operation.
@@ -300,7 +370,7 @@ impl DbDockApp {
             let errors: Vec<String> = validate::validate_enabled(&self.config)
                 .into_iter()
                 .filter(|(id, issue)| engines.contains(id) && issue.severity() == Severity::Error)
-                .map(|(id, issue)| format!("{}: {:?}", id.display_name(), issue.problem))
+                .map(|(id, issue)| format!("{}: {}", id.display_name(), issue_text(&issue)))
                 .collect();
             if !errors.is_empty() {
                 self.toasts
@@ -317,6 +387,7 @@ impl DbDockApp {
             output: Vec::new(),
             result: None,
             disable_after,
+            then: None,
         });
         Some(id)
     }
@@ -333,6 +404,7 @@ impl eframe::App for DbDockApp {
             Some(check) if check.is_ready() => self.cards(ui, &mut actions),
             check => crate::ui::docker_missing::show(ui, check.as_ref(), &mut actions),
         }
+        self.settings_window_ui(&ctx);
         self.output_window_ui(&ctx);
         self.toasts.show(&ctx, &mut actions);
 
