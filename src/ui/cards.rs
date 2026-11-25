@@ -120,6 +120,29 @@ impl DbDockApp {
                 ui.horizontal_wrapped(|ui| {
                     let can_act = settings.enabled && !busy;
                     let up = status.is_up();
+                    if id == EngineId::InterBase && !self.config.interbase_licensed {
+                        if ui
+                            .add_enabled(!busy, egui::Button::new("Set up license…"))
+                            .clicked()
+                        {
+                            actions.push(Action::OpenInterBaseWizard);
+                        }
+                        return;
+                    }
+                    if id == EngineId::Sqlite {
+                        // No server: "start" creates the file once.
+                        let can_create = can_act && !status.is_created();
+                        if ui
+                            .add_enabled(can_create, egui::Button::new("Create file"))
+                            .clicked()
+                        {
+                            actions.push(Action::Op(OpKind::Start, vec![id]));
+                        }
+                        if ui.button("Open folder").clicked() {
+                            actions.push(Action::OpenFolder(self.paths.sqlite_dir()));
+                        }
+                        return;
+                    }
                     if ui
                         .add_enabled(can_act && !up, egui::Button::new("Start"))
                         .clicked()
@@ -132,14 +155,16 @@ impl DbDockApp {
                     {
                         actions.push(Action::Op(OpKind::Stop, vec![id]));
                     }
-                    let can_restart = can_act && status.is_created() && id != EngineId::Sqlite;
                     if ui
-                        .add_enabled(can_restart, egui::Button::new("Restart"))
+                        .add_enabled(can_act && status.is_created(), egui::Button::new("Restart"))
                         .clicked()
                     {
                         actions.push(Action::Op(OpKind::Restart, vec![id]));
                     }
                 });
+                if engine.amd64_only() && cfg!(target_arch = "aarch64") {
+                    ui.colored_label(super::theme::WARNING_COLOR, emulation_warning());
+                }
                 ui.horizontal_wrapped(|ui| {
                     if ui
                         .add_enabled(!busy, egui::Button::new("Settings"))
@@ -195,4 +220,15 @@ fn badge(ui: &mut egui::Ui, id: EngineId) {
 
 fn first_line(text: &str) -> &str {
     text.lines().next().unwrap_or(text)
+}
+
+/// Shown on x86-64-only engines when running on an ARM computer.
+fn emulation_warning() -> &'static str {
+    if cfg!(target_os = "macos") {
+        "x86-64 image: runs under Rosetta emulation (enable it in Docker Desktop). \
+         Expect slower starts."
+    } else {
+        "x86-64 image: runs under emulation on this ARM computer (slower, needs \
+         qemu/binfmt support)."
+    }
 }

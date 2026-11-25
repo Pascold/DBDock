@@ -96,6 +96,9 @@ impl DbDockApp {
                     ui.add_space(6.0);
                     ui.label(RichText::new(note).weak());
                 }
+                if id == EngineId::InterBase && ui.button("InterBase setup guide").clicked() {
+                    actions.push(Action::OpenInterBaseWizard);
+                }
                 if id == EngineId::Sqlite {
                     ui.add_space(6.0);
                     if ui.button("Open folder").clicked() {
@@ -223,6 +226,10 @@ fn connection_note(id: EngineId) -> Option<&'static str> {
         EngineId::Firebird => Some(
             "Wire encryption is enabled. Firebird 3+ clients connect with the default \
              settings; older clients may need WireCrypt = Enabled.",
+        ),
+        EngineId::InterBase => Some(
+            "InterBase starts without a database: create one with isql as shown in the \
+             InterBase setup guide.",
         ),
         EngineId::Sqlite => {
             Some("SQLite has no server: open the file directly. It is created on the first start.")

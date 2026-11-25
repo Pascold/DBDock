@@ -64,6 +64,10 @@ pub enum Action {
     ResetConfirmed(EngineId),
     OpenFolder(PathBuf),
     ExportCompose,
+    OpenInterBaseWizard,
+    /// Run a command in a new terminal window.
+    OpenTerminal(String),
+    InterBaseLicensed,
     RecheckDocker,
     SetTheme(Theme),
 }
@@ -86,6 +90,7 @@ pub struct DbDockApp {
     pub(crate) connection_window: Option<EngineId>,
     pub(crate) logs_window: Option<LogsWindow>,
     pub(crate) confirm_reset: Option<EngineId>,
+    pub(crate) interbase_wizard: bool,
     /// Kept alive: on X11 the clipboard content disappears with its owner.
     clipboard: Option<arboard::Clipboard>,
 }
@@ -119,6 +124,7 @@ impl DbDockApp {
             connection_window: None,
             logs_window: None,
             confirm_reset: None,
+            interbase_wizard: false,
             clipboard: None,
         };
         app.apply_theme(&cc.egui_ctx);
@@ -278,7 +284,11 @@ impl DbDockApp {
                 self.start_op(kind, engines, None);
             }
             Action::StartAllEnabled => {
-                let engines: Vec<_> = compose::enabled(&self.config).collect();
+                // InterBase is enabled by its wizard before the license exists.
+                let licensed = self.config.interbase_licensed;
+                let engines: Vec<_> = compose::enabled(&self.config)
+                    .filter(|&id| id != EngineId::InterBase || licensed)
+                    .collect();
                 if engines.is_empty() {
                     self.toasts.info("No database is enabled.");
                 } else {
@@ -305,6 +315,20 @@ impl DbDockApp {
             }
             Action::OpenFolder(path) => self.open_folder(&path),
             Action::ExportCompose => self.export_compose(),
+            Action::OpenInterBaseWizard => self.apply_interbase_wizard(),
+            Action::OpenTerminal(command) => {
+                if let Err(e) = crate::terminal::open_with_command(&command) {
+                    self.toasts.error(format!(
+                        "Cannot open a terminal ({e}). Copy the command and run it yourself."
+                    ));
+                }
+            }
+            Action::InterBaseLicensed => {
+                self.config.interbase_licensed = true;
+                self.save_config();
+                self.interbase_wizard = false;
+                self.start_op(OpKind::Start, vec![EngineId::InterBase], None);
+            }
             Action::OpenSettings(id) => {
                 self.settings = Some(SettingsDraft::new(id, self.config.engine(id)));
             }
@@ -320,11 +344,27 @@ impl DbDockApp {
         }
     }
 
+    /// Enables InterBase (its service must be in the compose file for the
+    /// registration command) and opens the license wizard.
+    fn apply_interbase_wizard(&mut self) {
+        if !self.config.engine(EngineId::InterBase).enabled {
+            self.config.engine_mut(EngineId::InterBase).enabled = true;
+            self.save_config();
+        }
+        self.write_compose();
+        self.interbase_wizard = true;
+    }
+
     fn set_enabled(&mut self, id: EngineId, enabled: bool) {
         if !enabled && self.status(id).is_created() {
             // Remove the containers while the service is still in the
             // compose file; the data volume is kept.
             self.start_op(OpKind::Remove, vec![id], Some(id));
+            return;
+        }
+        if enabled && id == EngineId::InterBase && !self.config.interbase_licensed {
+            // InterBase cannot start before its license is registered.
+            self.apply_interbase_wizard();
             return;
         }
         self.config.engine_mut(id).enabled = enabled;
@@ -502,6 +542,7 @@ impl eframe::App for DbDockApp {
         self.connection_window_ui(&ctx, &mut actions);
         self.logs_window_ui(&ctx);
         self.reset_confirm_ui(&ctx, &mut actions);
+        self.interbase_wizard_ui(&ctx, &mut actions);
         self.output_window_ui(&ctx);
         self.toasts.show(&ctx, &mut actions);
 

@@ -2,6 +2,7 @@
 
 pub mod cards;
 pub mod docker_missing;
+pub mod interbase;
 pub mod settings;
 pub mod theme;
 pub mod toasts;
