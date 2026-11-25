@@ -8,7 +8,7 @@ mod mariadb;
 mod mssql;
 mod mysql;
 mod postgres;
-mod sqlite;
+pub mod sqlite;
 
 use serde::{Deserialize, Serialize};
 

@@ -1,22 +1,19 @@
 // Hide the console window on Windows in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use dbdock::app::DbDockApp;
+
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("DBDock")
-            .with_inner_size([960.0, 640.0]),
+            .with_inner_size([1000.0, 680.0])
+            .with_min_inner_size([360.0, 420.0]),
         ..Default::default()
     };
-    eframe::run_native("DBDock", options, Box::new(|_cc| Ok(Box::new(DbDockApp))))
-}
-
-struct DbDockApp;
-
-impl eframe::App for DbDockApp {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ui, |ui| {
-            ui.heading("DBDock");
-        });
-    }
+    eframe::run_native(
+        "DBDock",
+        options,
+        Box::new(|cc| Ok(Box::new(DbDockApp::new(cc)))),
+    )
 }
