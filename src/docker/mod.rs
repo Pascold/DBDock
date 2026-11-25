@@ -4,6 +4,7 @@
 //! runs these functions on background threads.
 
 pub mod status;
+pub mod worker;
 
 use std::io::{BufRead as _, BufReader, Read};
 use std::path::{Path, PathBuf};
