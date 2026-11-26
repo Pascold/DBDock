@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-26
+
+### Added
+
+- Footer with the version and links to the repository, releases, bug
+  reports and discussions.
+- Update notice: a red "Outdated" badge links to the newest release when
+  one is available. DBDock asks the public GitHub API once on start; the
+  check can be turned off in the footer (`check_updates` in `config.toml`).
+- The window size and position are remembered between starts
+  (`window.ron` in the data folder).
+
+### Changed
+
+- Updated the GitHub Actions used by CI and the release workflow.
+
 ## [0.1.0] - 2026-11-26
 
 ### Added
@@ -28,5 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release builds for Windows x86_64, Linux x86_64 and macOS (x86_64, aarch64)
   with SHA-256 checksums.
 
-[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Pascold/DBDock/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Pascold/DBDock/releases/tag/v0.1.0
