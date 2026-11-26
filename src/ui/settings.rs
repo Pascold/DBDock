@@ -79,6 +79,11 @@ impl SettingsDraft {
         let has_errors = issues.iter().any(|i| i.severity() == Severity::Error);
         let changed = self.settings != self.original;
         let credentials_changed = self.settings.credentials_differ(&self.original);
+        // Existing data may not open in another version (always so for a
+        // different PostgreSQL major or a downgrade). SQLite keeps a plain
+        // file that any version reads.
+        let version_changed =
+            id != EngineId::Sqlite && self.settings.version != self.original.version;
 
         let mut outcome = SettingsOutcome::Open;
         let mut open = true;
@@ -105,6 +110,10 @@ impl SettingsDraft {
                     ui.add_space(4.0);
                     ui.colored_label(WARNING_COLOR, t("settings.reset_warning"));
                 }
+                if version_changed && status.is_created() {
+                    ui.add_space(4.0);
+                    ui.colored_label(WARNING_COLOR, t("settings.version_warning"));
+                }
                 ui.label(RichText::new(t("settings.plain_text")).weak().small());
 
                 ui.separator();
@@ -118,7 +127,7 @@ impl SettingsDraft {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let can_save = changed && !has_errors;
                         if status.is_created() {
-                            if credentials_changed
+                            if (credentials_changed || version_changed)
                                 && ui
                                     .add_enabled(
                                         can_save,

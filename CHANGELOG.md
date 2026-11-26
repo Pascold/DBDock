@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   connections, instead of "Running".
 - The license wizard says to choose [2] Direct register, then [4] Save and
   [5] Quit; without Save the license was silently lost.
+- Changing the version in **Settings** warns that existing data may not
+  start with another version (always so for another PostgreSQL major or a
+  downgrade) and offers **Apply and reset data**.
 
 ## [0.1.2] - 2026-11-26
 
