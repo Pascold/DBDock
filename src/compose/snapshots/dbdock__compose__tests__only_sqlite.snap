@@ -19,11 +19,15 @@ services:
         target: "/data"
         read_only: false
       - type: "bind"
+        source: "/home/tester/.config/dbdock/scripts/sqlite"
+        target: "/dbdock-scripts"
+        read_only: true
+      - type: "bind"
         source: "/home/tester/.config/dbdock/seed/sqlite.sql"
         target: "/seed/sqlite.sql"
         read_only: true
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "set -e\napk add --no-cache sqlite > /dev/null\ndb=\"/data/$$DBDOCK_DB\"\nif [ -f \"$$db\" ]; then\n  echo \"DBDock: $$db already exists\"\nelse\n  sqlite3 \"$$db\" < /seed/sqlite.sql\n  echo \"DBDock: created $$db\"\nfi\n"
+      - "set -e\napk add --no-cache sqlite > /dev/null\ndb=\"/data/$$DBDOCK_DB\"\nif [ -f \"$$db\" ]; then\n  echo \"DBDock: $$db already exists\"\nelse\n  tmp=\"$$db.part\"\n  rm -f \"$$tmp\"\n  sqlite3 -bail \"$$tmp\" < /seed/sqlite.sql\n  for f in /dbdock-scripts/*.sql; do\n    [ -e \"$$f\" ] || continue\n    echo \"DBDock: running $$f\"\n    sqlite3 -bail \"$$tmp\" < \"$$f\"\n  done\n  mv \"$$tmp\" \"$$db\"\n  echo \"DBDock: created $$db\"\nfi\n"
     restart: "no"

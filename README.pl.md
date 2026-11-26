@@ -38,19 +38,24 @@ masz go zainstalowanego.
 - **Dane testowe** ze znakami diakrytycznymi (ü, é, ł, ß, €…), które
   wyłapują błędy kodowania: tabele `customers` i `orders` oraz widok
   `v_customer_summary`.
+- **Własne skrypty**: wrzuć pliki `.sql` do folderu **Skrypty** danej bazy, a
+  wykonają się w kolejności nazw, po danych testowych, przy tworzeniu jej
+  danych (wszystkie bazy oprócz InterBase).
 - **Ustawienia każdej bazy**: wersja obrazu, port, nazwa bazy, użytkownik
   i hasła, z walidacją na żywo (konflikty portów, zajęte porty, polityka
   haseł SQL Server).
 - **Logi** każdej bazy, pełne wyjście każdego polecenia Dockera i czytelne
-  komunikaty błędów.
+  komunikaty błędów. Gdy baza nie startuje, karta pokazuje dlaczego
+  (nieudany healthcheck albo błąd z logu) i proponuje reset, gdy dane
+  pochodzą z innej wersji.
 - **Bezpieczne ustawienia domyślne**: porty są wystawiane tylko na
   `127.0.0.1`, a wszystko działa w osobnym projekcie compose `dbdock`.
 - **Eksport** wygenerowanego `docker-compose.yml`, żeby używać go bez DBDock.
 - **Informacja o aktualizacji**: czerwony znacznik „Nieaktualna wersja” na
-  dolnym pasku prowadzi do najnowszego wydania. DBDock wysyła w tym celu przy
-  starcie jedno anonimowe zapytanie do publicznego API GitHuba (można to
-  wyłączyć polem „Sprawdzaj aktualizacje” na dolnym pasku); nic więcej nie
-  opuszcza Twojego komputera.
+  dolnym pasku prowadzi do najnowszego wydania. DBDock wysyła w tym celu
+  jedno anonimowe zapytanie do publicznego API GitHuba przy starcie i raz na
+  dobę, gdy jest otwarty (można to wyłączyć polem „Sprawdzaj aktualizacje” na
+  dolnym pasku); nic więcej nie opuszcza Twojego komputera.
 - Interfejs po polsku i angielsku, jasny i ciemny motyw, bez instalatora.
 
 ## Obsługiwane bazy
@@ -273,7 +278,6 @@ który sprawdza wygenerowane pliki przez `docker compose config`.
 
 - Kolejne silniki: Oracle Database Free, IBM Db2, ClickHouse, MongoDB, Redis.
 - Kilka instancji lub wersji tego samego silnika jednocześnie.
-- Własne skrypty inicjalizacyjne dla każdej bazy.
 - Opcjonalny dostęp z sieci lokalnej (`0.0.0.0`) dla wybranych baz.
 - Podpisane i notaryzowane wydania, paczka aplikacji dla macOS.
 

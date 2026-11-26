@@ -53,4 +53,16 @@ impl AppPaths {
     pub fn sqlite_dir(&self) -> PathBuf {
         self.base.join("sqlite")
     }
+
+    /// The user's own `.sql` files for an engine, run when its data is
+    /// created (after the sample data).
+    pub fn scripts_dir(&self, id: EngineId) -> PathBuf {
+        self.base.join("scripts").join(id.key())
+    }
+
+    /// Generated `/docker-entrypoint-initdb.d` contents of an engine: the
+    /// seed and copies of the user's scripts, rebuilt before every start.
+    pub fn init_dir(&self, id: EngineId) -> PathBuf {
+        self.base.join("init").join(id.key())
+    }
 }

@@ -3,6 +3,7 @@
 //! Everything here blocks; the UI only talks to [`worker::Docker`], which
 //! runs these functions on background threads.
 
+pub mod diagnose;
 pub mod status;
 pub mod worker;
 

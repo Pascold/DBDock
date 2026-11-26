@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- When a database does not start, its card shows why: the output of the
+  failing healthcheck (once it has failed for a while or is unhealthy) or
+  the error line of the log of a container that stopped with an error. If
+  the data belongs to another version (PostgreSQL major, Firebird on-disk
+  structure, MySQL or MariaDB downgrade), the card says so and offers
+  **Reset data**.
+- Your own scripts: every database except InterBase has a **Scripts**
+  button that opens its folder (`scripts/<engine>` in the data directory).
+  `.sql` files there run in name order, after the sample data, when the
+  data is created. SQLite builds the file under a temporary name, so a
+  failing script leaves no half-made database behind.
+
+### Changed
+
+- The update check also runs once a day while DBDock stays open, not only
+  on start. A failed later check keeps a notice already shown.
+- PostgreSQL, MySQL, MariaDB and Firebird mount a generated `init/<engine>`
+  folder (sample data and copies of your scripts) at
+  `/docker-entrypoint-initdb.d` instead of the single seed file.
+
 ## [0.1.3] - 2026-11-26
 
 English sample data, a Firebird alias for the database name, EOL marks for

@@ -36,18 +36,23 @@ you, so you don't need to know Docker. You only need to have it installed.
   connection strings (URL, JDBC, ADO.NET, Firebird, sqlcmd).
 - **Sample data** with accented letters (ü, é, ł, ß, €…) to catch encoding
   bugs: tables `customers` and `orders` and the view `v_customer_summary`.
+- **Your own scripts**: put `.sql` files in a database's **Scripts** folder and
+  they run in name order, after the sample data, when its data is created
+  (all databases except InterBase).
 - **Settings per database**: image version, port, database name, user and
   passwords, with live validation (port conflicts, busy ports, SQL Server
   password policy).
 - **Logs** of each database, the full output of every Docker command and
-  clear error messages.
+  clear error messages. When a database does not start, its card shows why
+  (the failing check or the error from its log) and offers a reset when the
+  data belongs to another version.
 - **Safe defaults**: ports are published on `127.0.0.1` only and everything
   runs in a separate compose project called `dbdock`.
 - **Export** the generated `docker-compose.yml` to use it without DBDock.
 - **Update notice**: a red "Outdated" badge in the status bar links to the
   newest release. DBDock makes one anonymous request to the public GitHub
-  API on start for this (switch it off with "Check for updates" in the status
-  bar); nothing else leaves your computer.
+  API on start and once a day while it stays open (switch it off with
+  "Check for updates" in the status bar); nothing else leaves your computer.
 - English and Polish UI, light and dark theme, no installer.
 
 ## Supported databases
@@ -269,7 +274,6 @@ which validates generated files with `docker compose config`.
 
 - More engines: Oracle Database Free, IBM Db2, ClickHouse, MongoDB, Redis.
 - Several instances or versions of the same engine side by side.
-- Custom init scripts per database.
 - Optional LAN access (binding to `0.0.0.0`) per database.
 - Signed and notarized releases, a macOS app bundle.
 

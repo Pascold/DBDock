@@ -8,6 +8,7 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::Arc;
 use std::time::Duration;
 
+use super::diagnose::Diagnoser;
 use super::status::{parse_ps, ContainerState};
 use super::{check, compose_args, run, run_streaming, DockerCheck};
 use crate::compose::PROJECT;
@@ -102,15 +103,21 @@ impl Docker {
         let (poke_tx, poke_rx) = mpsc::channel();
         self.poke = Some(poke_tx);
         let sender = self.sender();
-        std::thread::spawn(move || loop {
-            let result = fetch_status(&compose_file);
-            if !sender.send(Event::Status(result)) {
-                return;
-            }
-            match poke_rx.recv_timeout(STATUS_INTERVAL) {
-                Ok(()) | Err(RecvTimeoutError::Timeout) => {}
-                // The handle was dropped or replaced.
-                Err(RecvTimeoutError::Disconnected) => return,
+        std::thread::spawn(move || {
+            let mut diagnoser = Diagnoser::default();
+            loop {
+                let result = fetch_status(&compose_file).map(|mut containers| {
+                    diagnoser.fill(&mut containers);
+                    containers
+                });
+                if !sender.send(Event::Status(result)) {
+                    return;
+                }
+                match poke_rx.recv_timeout(STATUS_INTERVAL) {
+                    Ok(()) | Err(RecvTimeoutError::Timeout) => {}
+                    // The handle was dropped or replaced.
+                    Err(RecvTimeoutError::Disconnected) => return,
+                }
             }
         });
     }

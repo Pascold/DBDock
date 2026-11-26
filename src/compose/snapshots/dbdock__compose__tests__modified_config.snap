@@ -21,6 +21,10 @@ services:
       - type: "volume"
         source: "postgres-data"
         target: "/var/lib/postgresql"
+      - type: "bind"
+        source: "/home/tester/.config/dbdock/init/postgres"
+        target: "/docker-entrypoint-initdb.d"
+        read_only: true
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -43,8 +47,8 @@ services:
         source: "mysql-data"
         target: "/var/lib/mysql"
       - type: "bind"
-        source: "/home/tester/.config/dbdock/seed/mysql.sql"
-        target: "/docker-entrypoint-initdb.d/10-dbdock-seed.sql"
+        source: "/home/tester/.config/dbdock/init/mysql"
+        target: "/docker-entrypoint-initdb.d"
         read_only: true
     healthcheck:
       test:
@@ -88,10 +92,14 @@ services:
         source: "/home/tester/.config/dbdock/seed"
         target: "/dbdock"
         read_only: true
+      - type: "bind"
+        source: "/home/tester/.config/dbdock/scripts/mssql"
+        target: "/dbdock-scripts"
+        read_only: true
     entrypoint:
       - "/bin/bash"
       - "-c"
-      - "set -e\n/opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -f 65001 -i /dbdock/mssql-init.sql\necho \"DBDock: database $$DBDOCK_DB is ready\"\n"
+      - "set -e\nexisted=$$(/opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -f 65001 -h -1 -W -Q \"SET NOCOUNT ON; SELECT COUNT(*) FROM sys.databases WHERE name = N'$$DBDOCK_DB'\" | tr -d '[:space:]')\n/opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -f 65001 -i /dbdock/mssql-init.sql\nif [ \"$$existed\" = 0 ]; then\n  for f in /dbdock-scripts/*.sql; do\n    [ -e \"$$f\" ] || continue\n    echo \"DBDock: running $$f\"\n    /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -f 65001 -d \"$$DBDOCK_DB\" -i \"$$f\"\n  done\nfi\necho \"DBDock: database $$DBDOCK_DB is ready\"\n"
     depends_on:
       mssql:
         condition: "service_healthy"
@@ -118,8 +126,8 @@ services:
         source: "firebird-data"
         target: "/var/lib/firebird/data"
       - type: "bind"
-        source: "/home/tester/.config/dbdock/seed/firebird.sql"
-        target: "/docker-entrypoint-initdb.d/10-dbdock-seed.sql"
+        source: "/home/tester/.config/dbdock/init/firebird"
+        target: "/docker-entrypoint-initdb.d"
         read_only: true
     healthcheck:
       test:
@@ -167,13 +175,17 @@ services:
         target: "/data"
         read_only: false
       - type: "bind"
+        source: "/home/tester/.config/dbdock/scripts/sqlite"
+        target: "/dbdock-scripts"
+        read_only: true
+      - type: "bind"
         source: "/home/tester/.config/dbdock/seed/sqlite.sql"
         target: "/seed/sqlite.sql"
         read_only: true
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "set -e\napk add --no-cache sqlite > /dev/null\ndb=\"/data/$$DBDOCK_DB\"\nif [ -f \"$$db\" ]; then\n  echo \"DBDock: $$db already exists\"\nelse\n  sqlite3 \"$$db\" < /seed/sqlite.sql\n  chown 1000:1000 \"$$db\"\n  echo \"DBDock: created $$db\"\nfi\n"
+      - "set -e\napk add --no-cache sqlite > /dev/null\ndb=\"/data/$$DBDOCK_DB\"\nif [ -f \"$$db\" ]; then\n  echo \"DBDock: $$db already exists\"\nelse\n  tmp=\"$$db.part\"\n  rm -f \"$$tmp\"\n  sqlite3 -bail \"$$tmp\" < /seed/sqlite.sql\n  for f in /dbdock-scripts/*.sql; do\n    [ -e \"$$f\" ] || continue\n    echo \"DBDock: running $$f\"\n    sqlite3 -bail \"$$tmp\" < \"$$f\"\n  done\n  mv \"$$tmp\" \"$$db\"\n  chown 1000:1000 \"$$db\"\n  echo \"DBDock: created $$db\"\nfi\n"
     restart: "no"
 volumes:
   postgres-data: {}

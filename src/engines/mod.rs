@@ -163,6 +163,18 @@ pub trait Engine: Sync {
         None
     }
 
+    /// True if the engine runs the user's scripts from
+    /// [`AppPaths::scripts_dir`] when its data is created.
+    fn custom_scripts(&self) -> bool {
+        true
+    }
+
+    /// True if the image runs `/docker-entrypoint-initdb.d` itself; DBDock
+    /// then mounts [`AppPaths::init_dir`] there.
+    fn uses_initdb_dir(&self) -> bool {
+        false
+    }
+
     /// Extra files written next to the seeds (`(file name, contents)`).
     fn helper_files(&self) -> &'static [(&'static str, &'static str)] {
         &[]

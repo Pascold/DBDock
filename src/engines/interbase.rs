@@ -111,6 +111,11 @@ impl Engine for InterBase {
         &["interbase-license"]
     }
 
+    // No init mechanism: databases are created by hand with isql.
+    fn custom_scripts(&self) -> bool {
+        false
+    }
+
     fn start_services(&self) -> &'static [&'static str] {
         &["interbase"]
     }

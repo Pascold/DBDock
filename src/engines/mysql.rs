@@ -53,14 +53,15 @@ impl Engine for MySql {
     }
 
     fn services(&self, s: &EngineSettings, ctx: &ComposeContext<'_>) -> Vec<(String, Yaml)> {
-        let mut volumes = vec![compose::volume("mysql-data", "/var/lib/mysql")];
-        if s.seed {
-            volumes.push(compose::bind(
-                &ctx.paths.seed_file(EngineId::MySql),
-                "/docker-entrypoint-initdb.d/10-dbdock-seed.sql",
+        // Seed and the user's scripts, see `compose::write_files`.
+        let volumes = vec![
+            compose::volume("mysql-data", "/var/lib/mysql"),
+            compose::bind(
+                &ctx.paths.init_dir(EngineId::MySql),
+                "/docker-entrypoint-initdb.d",
                 true,
-            ));
-        }
+            ),
+        ];
         let service = compose::service(self.image(s))
             .with(
                 "environment",
@@ -89,6 +90,10 @@ impl Engine for MySql {
 
     fn volumes(&self) -> &'static [&'static str] {
         &["mysql-data"]
+    }
+
+    fn uses_initdb_dir(&self) -> bool {
+        true
     }
 
     fn start_services(&self) -> &'static [&'static str] {

@@ -9,6 +9,9 @@ use crate::engines::EngineId;
 pub struct ContainerState {
     #[serde(rename = "Service")]
     pub service: String,
+    /// Container name, e.g. `dbdock-postgres-1`.
+    #[serde(rename = "Name", default)]
+    pub name: String,
     /// `running`, `exited`, `created`, `restarting`, `paused`, `dead`, ...
     #[serde(rename = "State", default)]
     pub state: String,
@@ -17,6 +20,9 @@ pub struct ContainerState {
     pub health: String,
     #[serde(rename = "ExitCode", default)]
     pub exit_code: i64,
+    /// Why the container does not work, filled in by the poller.
+    #[serde(skip)]
+    pub diagnosis: Option<super::diagnose::Diagnosis>,
 }
 
 /// Parses `ps` output. Compose prints one JSON object per line (newer
@@ -67,6 +73,20 @@ impl EngineStatus {
             EngineStatus::Starting | EngineStatus::Healthy | EngineStatus::Running
         )
     }
+}
+
+/// Why engine `id` does not work, from the first of its containers with a
+/// diagnosis (the server, then helpers such as `mssql-init`).
+pub fn engine_diagnosis(
+    id: EngineId,
+    containers: &[ContainerState],
+) -> Option<&super::diagnose::Diagnosis> {
+    id.engine().start_services().iter().find_map(|service| {
+        containers
+            .iter()
+            .find(|c| c.service == *service)
+            .and_then(|c| c.diagnosis.as_ref())
+    })
 }
 
 /// Status of `id`, derived from all containers of the project.
@@ -138,6 +158,8 @@ mod tests {
     fn c(service: &str, state: &str, health: &str, exit_code: i64) -> ContainerState {
         ContainerState {
             service: service.into(),
+            name: String::new(),
+            diagnosis: None,
             state: state.into(),
             health: health.into(),
             exit_code,

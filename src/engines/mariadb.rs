@@ -53,14 +53,15 @@ impl Engine for MariaDb {
     }
 
     fn services(&self, s: &EngineSettings, ctx: &ComposeContext<'_>) -> Vec<(String, Yaml)> {
-        let mut volumes = vec![compose::volume("mariadb-data", "/var/lib/mysql")];
-        if s.seed {
-            volumes.push(compose::bind(
-                &ctx.paths.seed_file(EngineId::MariaDb),
-                "/docker-entrypoint-initdb.d/10-dbdock-seed.sql",
+        // Seed and the user's scripts, see `compose::write_files`.
+        let volumes = vec![
+            compose::volume("mariadb-data", "/var/lib/mysql"),
+            compose::bind(
+                &ctx.paths.init_dir(EngineId::MariaDb),
+                "/docker-entrypoint-initdb.d",
                 true,
-            ));
-        }
+            ),
+        ];
         let service = compose::service(self.image(s))
             .with(
                 "environment",
@@ -82,6 +83,10 @@ impl Engine for MariaDb {
 
     fn volumes(&self) -> &'static [&'static str] {
         &["mariadb-data"]
+    }
+
+    fn uses_initdb_dir(&self) -> bool {
+        true
     }
 
     fn start_services(&self) -> &'static [&'static str] {

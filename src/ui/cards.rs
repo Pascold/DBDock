@@ -2,9 +2,10 @@
 
 use egui::{Color32, CornerRadius, RichText, Stroke, Vec2};
 
-use super::theme::{engine_color, engine_monogram, status_color};
+use super::theme::{engine_color, engine_monogram, status_color, WARNING_COLOR};
 use crate::app::{Action, DbDockApp};
-use crate::docker::status::EngineStatus;
+use crate::docker::diagnose::Diagnosis;
+use crate::docker::status::{engine_diagnosis, EngineStatus};
 use crate::docker::worker::OpKind;
 use crate::engines::{EngineId, Field};
 use crate::i18n::{t, tf};
@@ -125,6 +126,11 @@ impl DbDockApp {
                         ui.label(RichText::new(status_text(status)).color(color).strong());
                     }
                 });
+                if running_op.is_none() {
+                    if let Some(diagnosis) = engine_diagnosis(id, &self.containers) {
+                        diagnosis_ui(ui, id, diagnosis, busy, actions);
+                    }
+                }
                 ui.add_space(6.0);
 
                 // Main actions.
@@ -205,6 +211,18 @@ impl DbDockApp {
                     {
                         actions.push(Action::OpenLogs(id));
                     }
+                    if engine.custom_scripts()
+                        && ui
+                            .button(t("card.scripts"))
+                            .on_hover_ui(|ui| {
+                                // Read the folder only while hovering.
+                                let count = crate::compose::user_scripts(&self.paths, id).len();
+                                ui.label(tf("card.scripts_hint", &[("count", &count)]));
+                            })
+                            .clicked()
+                    {
+                        actions.push(Action::OpenFolder(self.paths.scripts_dir(id)));
+                    }
                     if ui
                         .add_enabled(
                             !busy && status.is_created(),
@@ -217,6 +235,37 @@ impl DbDockApp {
                     }
                 });
             })
+        });
+    }
+}
+
+/// Why the engine does not work: the error text (shortened, full text on
+/// hover) and, for data of another version, a way out through a reset.
+fn diagnosis_ui(
+    ui: &mut egui::Ui,
+    id: EngineId,
+    diagnosis: &Diagnosis,
+    busy: bool,
+    actions: &mut Vec<Action>,
+) {
+    let line = diagnosis.text.lines().next().unwrap_or_default();
+    let short: String = if line.chars().count() > 110 {
+        format!("{}…", line.chars().take(110).collect::<String>())
+    } else {
+        line.to_owned()
+    };
+    ui.add(egui::Label::new(RichText::new(short).small().weak()).wrap())
+        .on_hover_text(&diagnosis.text);
+    if diagnosis.incompatible_data {
+        ui.horizontal_wrapped(|ui| {
+            ui.colored_label(WARNING_COLOR, t("card.incompatible_data"));
+            if ui
+                .add_enabled(!busy, egui::Button::new(t("card.reset")).small())
+                .on_hover_text(t("card.reset_hint"))
+                .clicked()
+            {
+                actions.push(Action::ConfirmReset(id));
+            }
         });
     }
 }

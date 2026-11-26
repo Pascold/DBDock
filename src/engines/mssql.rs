@@ -85,12 +85,29 @@ impl Engine for MsSql {
         // SQL Server images have no init-script folder, so a one-shot
         // container creates the database and the user once the server is up.
         let sqlcmd = format!("{SQLCMD} -S mssql -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -f 65001");
-        let mut script = format!("set -e\n{sqlcmd} -i /dbdock/mssql-init.sql\n");
+        // This container runs on every start. The user's scripts run only
+        // when it has just created the database, like the initdb folders of
+        // the other images. The name is a validated identifier.
+        let mut script = format!(
+            "set -e\n\
+             existed=$$({sqlcmd} -h -1 -W -Q \"SET NOCOUNT ON; \
+             SELECT COUNT(*) FROM sys.databases WHERE name = N'$$DBDOCK_DB'\" | tr -d '[:space:]')\n\
+             {sqlcmd} -i /dbdock/mssql-init.sql\n"
+        );
         if s.seed {
             script.push_str(&format!(
                 "{sqlcmd} -d \"$$DBDOCK_DB\" -i /dbdock/mssql.sql\n"
             ));
         }
+        script.push_str(&format!(
+            "if [ \"$$existed\" = 0 ]; then\n  \
+               for f in /dbdock-scripts/*.sql; do\n    \
+                 [ -e \"$$f\" ] || continue\n    \
+                 echo \"DBDock: running $$f\"\n    \
+                 {sqlcmd} -d \"$$DBDOCK_DB\" -i \"$$f\"\n  \
+               done\n\
+             fi\n"
+        ));
         script.push_str("echo \"DBDock: database $$DBDOCK_DB is ready\"\n");
 
         let init = compose::service(self.image(s))
@@ -106,7 +123,14 @@ impl Engine for MsSql {
             )
             .with(
                 "volumes",
-                Yaml::Seq(vec![compose::bind(&ctx.paths.seed_dir(), "/dbdock", true)]),
+                Yaml::Seq(vec![
+                    compose::bind(&ctx.paths.seed_dir(), "/dbdock", true),
+                    compose::bind(
+                        &ctx.paths.scripts_dir(EngineId::MsSql),
+                        "/dbdock-scripts",
+                        true,
+                    ),
+                ]),
             )
             .with("entrypoint", Yaml::strings(["/bin/bash", "-c", &script]))
             .with(

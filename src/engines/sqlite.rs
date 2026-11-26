@@ -46,21 +46,30 @@ impl Engine for Sqlite {
     fn services(&self, s: &EngineSettings, ctx: &ComposeContext<'_>) -> Vec<(String, Yaml)> {
         // No server: a one-shot container creates the file in the SQLite
         // folder of the data directory, where the user opens it directly.
-        let mut volumes = vec![compose::bind(&ctx.paths.sqlite_dir(), "/data", false)];
+        let mut volumes = vec![
+            compose::bind(&ctx.paths.sqlite_dir(), "/data", false),
+            compose::bind(
+                &ctx.paths.scripts_dir(EngineId::Sqlite),
+                "/dbdock-scripts",
+                true,
+            ),
+        ];
         let create = if s.seed {
             volumes.push(compose::bind(
                 &ctx.paths.seed_file(EngineId::Sqlite),
                 "/seed/sqlite.sql",
                 true,
             ));
-            "sqlite3 \"$$db\" < /seed/sqlite.sql"
+            "sqlite3 -bail \"$$tmp\" < /seed/sqlite.sql"
         } else {
-            "sqlite3 \"$$db\" 'VACUUM;'"
+            "sqlite3 \"$$tmp\" 'VACUUM;'"
         };
         let chown = ctx
             .owner
             .map(|(uid, gid)| format!("  chown {uid}:{gid} \"$$db\"\n"))
             .unwrap_or_default();
+        // The file is built under a temporary name, so a failing script does
+        // not leave a half-initialised database behind.
         let script = format!(
             "set -e\n\
              apk add --no-cache sqlite > /dev/null\n\
@@ -68,7 +77,15 @@ impl Engine for Sqlite {
              if [ -f \"$$db\" ]; then\n  \
                echo \"DBDock: $$db already exists\"\n\
              else\n  \
-               {create}\n\
+               tmp=\"$$db.part\"\n  \
+               rm -f \"$$tmp\"\n  \
+               {create}\n  \
+               for f in /dbdock-scripts/*.sql; do\n    \
+                 [ -e \"$$f\" ] || continue\n    \
+                 echo \"DBDock: running $$f\"\n    \
+                 sqlite3 -bail \"$$tmp\" < \"$$f\"\n  \
+               done\n  \
+               mv \"$$tmp\" \"$$db\"\n\
              {chown}  \
                echo \"DBDock: created $$db\"\n\
              fi\n"

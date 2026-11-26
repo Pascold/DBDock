@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 use crate::compose::{self, ComposeContext};
 use crate::config::validate::{self, Severity};
@@ -19,6 +20,8 @@ use crate::update::{self, Release};
 
 /// How many finished operations are remembered for the output window.
 const KEPT_OPERATIONS: usize = 20;
+/// How often DBDock asks GitHub for a new release while it stays open.
+const UPDATE_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
 
 /// A Docker operation started from the UI.
 pub struct Operation {
@@ -99,6 +102,9 @@ pub struct DbDockApp {
     clipboard: Option<arboard::Clipboard>,
     /// Result of the background update check, received once.
     update_rx: Option<std::sync::mpsc::Receiver<Option<Release>>>,
+    /// When the last update check started; repeated every
+    /// [`UPDATE_INTERVAL`] while DBDock stays open.
+    update_checked: Option<Instant>,
     /// A newer release, if one exists.
     pub(crate) update: Option<Release>,
 }
@@ -138,6 +144,7 @@ impl DbDockApp {
             confirm_reset: None,
             interbase_wizard: false,
             clipboard: None,
+            update_checked: update_rx.as_ref().map(|_| Instant::now()),
             update_rx,
             update: None,
         };
@@ -183,6 +190,24 @@ impl DbDockApp {
     }
 
     /// Writes the compose file and its helper files.
+    fn start_update_check(&mut self, ctx: &egui::Context) {
+        self.update_rx = Some(spawn_update_check(ctx));
+        self.update_checked = Some(Instant::now());
+    }
+
+    /// Checks for a new release again once a day while DBDock stays open.
+    fn recheck_updates(&mut self, ctx: &egui::Context) {
+        if !self.config.check_updates || self.update_rx.is_some() {
+            return;
+        }
+        match self.update_checked.map(|at| at.elapsed()) {
+            Some(elapsed) if elapsed >= UPDATE_INTERVAL => self.start_update_check(ctx),
+            // Wake up for the next check even if nothing else repaints.
+            Some(elapsed) => ctx.request_repaint_after(UPDATE_INTERVAL - elapsed),
+            None => {}
+        }
+    }
+
     fn write_compose(&mut self) -> Option<PathBuf> {
         let ctx = ComposeContext::for_host(&self.paths);
         match compose::write_files(&self.config, &ctx) {
@@ -203,7 +228,10 @@ impl DbDockApp {
         if let Some(rx) = &self.update_rx {
             match rx.try_recv() {
                 Ok(release) => {
-                    self.update = release;
+                    // A failed later check keeps the notice already shown.
+                    if release.is_some() {
+                        self.update = release;
+                    }
                     self.update_rx = None;
                 }
                 Err(std::sync::mpsc::TryRecvError::Disconnected) => self.update_rx = None,
@@ -368,7 +396,7 @@ impl DbDockApp {
                     self.update = None;
                     self.update_rx = None;
                 } else if self.update.is_none() && self.update_rx.is_none() {
-                    self.update_rx = Some(spawn_update_check(ctx));
+                    self.start_update_check(ctx);
                 }
             }
             Action::SetLanguage(language) => {
@@ -584,6 +612,7 @@ impl eframe::App for DbDockApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.process_events();
         let ctx = ui.ctx().clone();
+        self.recheck_updates(&ctx);
         let mut actions = Vec::new();
 
         self.top_bar(ui, &mut actions);

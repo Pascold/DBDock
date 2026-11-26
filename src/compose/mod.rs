@@ -96,10 +96,72 @@ pub fn write_files(config: &AppConfig, ctx: &ComposeContext<'_>) -> Result<PathB
         for (name, contents) in engine.helper_files() {
             write_atomic(&paths.seed_dir().join(name), contents.as_bytes())?;
         }
+        if engine.custom_scripts() {
+            create_dir(&paths.scripts_dir(id))?;
+        }
+        if engine.uses_initdb_dir() {
+            fill_init_dir(paths, id, config.engine(id).seed)?;
+        }
     }
     let compose = paths.compose_file();
     write_atomic(&compose, generate(config, ctx).as_bytes())?;
     Ok(compose)
+}
+
+fn create_dir(dir: &Path) -> Result<(), ConfigError> {
+    std::fs::create_dir_all(dir).map_err(|source| ConfigError::Io {
+        path: dir.to_owned(),
+        source,
+    })
+}
+
+/// The user's `.sql` files for `id`, sorted by name (the order they run in).
+pub fn user_scripts(paths: &AppPaths, id: EngineId) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(paths.scripts_dir(id)) else {
+        return Vec::new();
+    };
+    let mut scripts: Vec<PathBuf> = entries
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.is_file()
+                && path
+                    .extension()
+                    .is_some_and(|ext| ext.eq_ignore_ascii_case("sql"))
+        })
+        .collect();
+    scripts.sort();
+    scripts
+}
+
+/// Rebuilds the folder mounted at `/docker-entrypoint-initdb.d`: the seed
+/// (`10-dbdock-seed.sql`) followed by copies of the user's scripts
+/// (`20-<name>`). The image runs them only when its data is created.
+fn fill_init_dir(paths: &AppPaths, id: EngineId, seed: bool) -> Result<(), ConfigError> {
+    let dir = paths.init_dir(id);
+    let io = |source| ConfigError::Io {
+        path: dir.clone(),
+        source,
+    };
+    create_dir(&dir)?;
+    for entry in std::fs::read_dir(&dir).map_err(io)? {
+        let path = entry.map_err(io)?.path();
+        if path.is_file() {
+            std::fs::remove_file(&path).map_err(io)?;
+        }
+    }
+    if seed {
+        if let Some(sql) = id.engine().seed_sql() {
+            write_atomic(&dir.join("10-dbdock-seed.sql"), sql.as_bytes())?;
+        }
+    }
+    for script in user_scripts(paths, id) {
+        let Some(name) = script.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        std::fs::copy(&script, dir.join(format!("20-{name}"))).map_err(io)?;
+    }
+    Ok(())
 }
 
 /// Enabled engines in display order.
@@ -251,5 +313,63 @@ mod tests {
             );
         }
         assert!(paths.seed_dir().join("mssql-init.sql").is_file());
+        for id in EngineId::ALL {
+            assert_eq!(
+                paths.scripts_dir(id).is_dir(),
+                id.engine().custom_scripts(),
+                "{id:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn init_dir_holds_seed_and_user_scripts_in_order() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(dir.path());
+        let ctx = ComposeContext {
+            paths: &paths,
+            owner: None,
+        };
+        let id = EngineId::Postgres;
+        let scripts = paths.scripts_dir(id);
+        std::fs::create_dir_all(&scripts).unwrap();
+        std::fs::write(scripts.join("02_data.sql"), "INSERT;").unwrap();
+        std::fs::write(scripts.join("01_schema.SQL"), "CREATE;").unwrap();
+        std::fs::write(scripts.join("notes.txt"), "ignored").unwrap();
+
+        let mut config = AppConfig::default();
+        write_files(&config, &ctx).unwrap();
+        let listing = |path: &Path| {
+            let mut names: Vec<String> = std::fs::read_dir(path)
+                .unwrap()
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            names.sort();
+            names
+        };
+        let init = paths.init_dir(id);
+        assert_eq!(
+            listing(&init),
+            ["10-dbdock-seed.sql", "20-01_schema.SQL", "20-02_data.sql"]
+        );
+        assert_eq!(
+            std::fs::read_to_string(init.join("20-02_data.sql")).unwrap(),
+            "INSERT;"
+        );
+
+        // Without the seed and after removing a script, stale copies go.
+        config.engine_mut(id).seed = false;
+        std::fs::remove_file(scripts.join("02_data.sql")).unwrap();
+        write_files(&config, &ctx).unwrap();
+        assert_eq!(listing(&init), ["20-01_schema.SQL"]);
+        assert_eq!(
+            user_scripts(&paths, id)
+                .iter()
+                .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+                .collect::<Vec<_>>(),
+            ["01_schema.SQL"]
+        );
+        // Engines without an initdb folder get none.
+        assert!(!paths.init_dir(EngineId::MsSql).exists());
     }
 }

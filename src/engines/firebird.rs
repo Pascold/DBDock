@@ -77,14 +77,15 @@ impl Engine for Firebird {
 
     fn services(&self, s: &EngineSettings, ctx: &ComposeContext<'_>) -> Vec<(String, Yaml)> {
         let file_name = format!("{}.fdb", s.database);
-        let mut volumes = vec![compose::volume("firebird-data", DATA_DIR)];
-        if s.seed {
-            volumes.push(compose::bind(
-                &ctx.paths.seed_file(EngineId::Firebird),
-                "/docker-entrypoint-initdb.d/10-dbdock-seed.sql",
+        // Seed and the user's scripts, see `compose::write_files`.
+        let volumes = vec![
+            compose::volume("firebird-data", DATA_DIR),
+            compose::bind(
+                &ctx.paths.init_dir(EngineId::Firebird),
+                "/docker-entrypoint-initdb.d",
                 true,
-            ));
-        }
+            ),
+        ];
         let health = format!(
             "echo 'SELECT 1 FROM RDB$$DATABASE;' | /opt/firebird/bin/isql -b -q \
              -user SYSDBA -password \"$$FIREBIRD_ROOT_PASSWORD\" {HOST}:{}",
@@ -111,6 +112,10 @@ impl Engine for Firebird {
 
     fn volumes(&self) -> &'static [&'static str] {
         &["firebird-data"]
+    }
+
+    fn uses_initdb_dir(&self) -> bool {
+        true
     }
 
     fn start_services(&self) -> &'static [&'static str] {
