@@ -186,7 +186,7 @@ confirm = "Usuń dane"
 
 [interbase]
 title = "Konfiguracja InterBase"
-intro = "InterBase to oprogramowanie komercyjne. Oficjalny obraz Dockera wymaga licencji, a do testów wystarczy darmowa licencja Developer Edition."
+intro = "InterBase to oprogramowanie komercyjne. Oficjalny obraz Dockera wymaga licencji, a do testów wystarczy darmowa licencja Developer Edition. Obraz to InterBase 2020, więc licencja musi być na InterBase 2020. Obsługa jest eksperymentalna: działanie z licencją nie było jeszcze testowane."
 step1 = "1. Zdobądź darmową licencję Developer Edition"
 step1_text = "Zarejestruj się na stronie Embarcadero. Numer seryjny przyjdzie e-mailem; przygotuj też login do konta Embarcadero (EDN)."
 license_link = "InterBase Developer Edition"

@@ -59,7 +59,7 @@ you, so you don't need to know Docker. You only need to have it installed.
 | MySQL | `mysql:8.4` | 3307 → 3306 | `testdb` | `tester` / `tester123` | `root` / `root123` |
 | MS SQL Server | `mcr.microsoft.com/mssql/server:2022-latest` | 1433 → 1433 | `testdb` | `tester` / `tester123` | `sa` / `Test_Passw0rd!` |
 | Firebird | `firebirdsql/firebird:5` | 3050 → 3050 | `/var/lib/firebird/data/testdb.fdb` | `tester` / `tester123` | `SYSDBA` / `masterkey` |
-| InterBase | `radstudio/interbase:2020.4` | 3051 → 3050 | created by you (see below) | — | `SYSDBA` / `masterkey` |
+| InterBase (experimental) | `radstudio/interbase:2020.4` | 3051 → 3050 | created by you (see below) | — | `SYSDBA` / `masterkey` |
 | SQLite | `alpine:3` + `sqlite` | — | `test.db` in the data folder | — | — |
 
 Every value can be changed in the database's **Settings**. PostgreSQL 18 and
@@ -171,6 +171,15 @@ The **Connection** window shows these strings for your current settings,
 with special characters in passwords already URL-encoded where needed.
 
 ## InterBase licensing
+
+> **InterBase support is experimental.** Without a license DBDock behaves as
+> described below, but running the server with a registered license has not
+> been tested yet. The Docker image exists only for **InterBase 2020**, so the
+> serial number has to be for InterBase 2020; a license for a newer InterBase
+> (for example an InterBase 15 trial) does not work with it. If you have a
+> license and try it, please tell us how it went in
+> [Discussions](https://github.com/Pascold/DBDock/discussions) or open an
+> [issue](https://github.com/Pascold/DBDock/issues/new/choose).
 
 InterBase is commercial software from Embarcadero. The official image
 `radstudio/interbase` requires a license; the free **Developer Edition** is

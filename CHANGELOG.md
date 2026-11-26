@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changing the version in **Settings** warns that existing data may not
   start with another version (always so for another PostgreSQL major or a
   downgrade) and offers **Apply and reset data**.
+- InterBase is marked as experimental in the README and the license wizard:
+  running it with a license has not been tested yet, and the license has to
+  be for InterBase 2020, the only version the Docker image exists for.
 
 ## [0.1.2] - 2026-11-26
 

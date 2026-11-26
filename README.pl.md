@@ -61,7 +61,7 @@ masz go zainstalowanego.
 | MySQL | `mysql:8.4` | 3307 → 3306 | `testdb` | `tester` / `tester123` | `root` / `root123` |
 | MS SQL Server | `mcr.microsoft.com/mssql/server:2022-latest` | 1433 → 1433 | `testdb` | `tester` / `tester123` | `sa` / `Test_Passw0rd!` |
 | Firebird | `firebirdsql/firebird:5` | 3050 → 3050 | `/var/lib/firebird/data/testdb.fdb` | `tester` / `tester123` | `SYSDBA` / `masterkey` |
-| InterBase | `radstudio/interbase:2020.4` | 3051 → 3050 | tworzysz sam (patrz niżej) | — | `SYSDBA` / `masterkey` |
+| InterBase (eksperymentalnie) | `radstudio/interbase:2020.4` | 3051 → 3050 | tworzysz sam (patrz niżej) | — | `SYSDBA` / `masterkey` |
 | SQLite | `alpine:3` + `sqlite` | — | `test.db` w folderze danych | — | — |
 
 Każdą wartość można zmienić w **Ustawieniach** bazy. PostgreSQL 18 i nowsze
@@ -174,6 +174,15 @@ Okno **Połączenie** pokazuje te wartości dla bieżących ustawień, a znaki
 specjalne w hasłach są tam, gdzie trzeba, zakodowane w URL.
 
 ## Licencja InterBase
+
+> **Obsługa InterBase jest eksperymentalna.** Bez licencji DBDock działa tak,
+> jak opisano niżej, ale uruchomienie serwera z zarejestrowaną licencją nie
+> było jeszcze testowane. Obraz Dockera istnieje tylko dla **InterBase 2020**,
+> więc numer seryjny musi być na InterBase 2020; licencja na nowszą wersję
+> (np. InterBase 15 Trial) z nim nie zadziała. Jeśli masz licencję i
+> spróbujesz, daj znać w
+> [Discussions](https://github.com/Pascold/DBDock/discussions) albo otwórz
+> [zgłoszenie](https://github.com/Pascold/DBDock/issues/new/choose).
 
 InterBase to komercyjne oprogramowanie firmy Embarcadero. Oficjalny obraz
 `radstudio/interbase` wymaga licencji; do testów wystarczy darmowa

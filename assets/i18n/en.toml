@@ -186,7 +186,7 @@ confirm = "Delete data"
 
 [interbase]
 title = "InterBase setup"
-intro = "InterBase is commercial software. The official Docker image needs a license, and the free Developer Edition license is enough for testing."
+intro = "InterBase is commercial software. The official Docker image needs a license, and the free Developer Edition license is enough for testing. The image is InterBase 2020, so the license must be for InterBase 2020. Support is experimental: running with a license has not been tested yet."
 step1 = "1. Get a free Developer Edition license"
 step1_text = "Register on the Embarcadero website. The serial number arrives by e-mail; keep your Embarcadero account (EDN) login at hand as well."
 license_link = "InterBase Developer Edition"
