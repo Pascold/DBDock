@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-26
+
+Cards explain why a database does not start, your own SQL scripts run when
+a database is created, and the update check repeats once a day.
+
 ### Added
 
 - When a database does not start, its card shows why: the output of the
@@ -115,7 +120,8 @@ old versions, and clearer InterBase license handling.
 - Release builds for Windows x86_64, Linux x86_64 and macOS (x86_64, aarch64)
   with SHA-256 checksums.
 
-[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/Pascold/DBDock/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/Pascold/DBDock/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Pascold/DBDock/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Pascold/DBDock/compare/v0.1.0...v0.1.1
