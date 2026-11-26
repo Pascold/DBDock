@@ -44,6 +44,10 @@ you, so you don't need to know Docker. You only need to have it installed.
 - **Safe defaults**: ports are published on `127.0.0.1` only and everything
   runs in a separate compose project called `dbdock`.
 - **Export** the generated `docker-compose.yml` to use it without DBDock.
+- **Update notice**: a red "Outdated" badge in the status bar links to the
+  newest release. DBDock makes one anonymous request to the public GitHub
+  API on start for this (switch it off with "Check for updates" in the status
+  bar); nothing else leaves your computer.
 - English and Polish UI, light and dark theme, no installer.
 
 ## Supported databases
@@ -116,7 +120,8 @@ is created, so after changing them choose **Apply and reset data**.
 | macOS | `~/Library/Application Support/DBDock` |
 | Linux | `~/.config/dbdock` |
 
-It contains `config.toml`, the generated `docker-compose.yml`, the seed
+It contains `config.toml`, `window.ron` (window size and position), the
+generated `docker-compose.yml`, the seed
 scripts and the `sqlite` folder. **Open data folder** in the top bar opens it.
 Set the environment variable `DBDOCK_HOME` to use another folder.
 

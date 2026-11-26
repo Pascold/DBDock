@@ -45,6 +45,11 @@ masz go zainstalowanego.
 - **Bezpieczne ustawienia domyślne**: porty są wystawiane tylko na
   `127.0.0.1`, a wszystko działa w osobnym projekcie compose `dbdock`.
 - **Eksport** wygenerowanego `docker-compose.yml`, żeby używać go bez DBDock.
+- **Informacja o aktualizacji**: czerwony znacznik „Nieaktualna wersja” na
+  dolnym pasku prowadzi do najnowszego wydania. DBDock wysyła w tym celu przy
+  starcie jedno anonimowe zapytanie do publicznego API GitHuba (można to
+  wyłączyć polem „Sprawdzaj aktualizacje” na dolnym pasku); nic więcej nie
+  opuszcza Twojego komputera.
 - Interfejs po polsku i angielsku, jasny i ciemny motyw, bez instalatora.
 
 ## Obsługiwane bazy
@@ -118,7 +123,8 @@ danych, więc po ich zmianie wybierz **Zastosuj i zresetuj dane**.
 | macOS | `~/Library/Application Support/DBDock` |
 | Linux | `~/.config/dbdock` |
 
-Zawiera `config.toml`, wygenerowany `docker-compose.yml`, skrypty seed i folder
+Zawiera `config.toml`, `window.ron` (rozmiar i pozycja okna), wygenerowany
+`docker-compose.yml`, skrypty seed i folder
 `sqlite`. Otwiera go przycisk **Otwórz folder danych** na górnym pasku.
 Zmienna środowiskowa `DBDOCK_HOME` pozwala użyć innego folderu.
 
