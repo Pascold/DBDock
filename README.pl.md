@@ -86,8 +86,8 @@ Pobierz plik dla swojego systemu z
 |---|---|
 | Windows x86_64 | `dbdock-vX.Y.Z-windows-x86_64.exe` |
 | Linux x86_64 | `dbdock-vX.Y.Z-linux-x86_64.tar.gz` |
-| macOS Apple Silicon | `dbdock-vX.Y.Z-macos-aarch64.tar.gz` |
-| macOS Intel | `dbdock-vX.Y.Z-macos-x86_64.tar.gz` |
+| macOS Apple Silicon (eksperymentalnie) | `dbdock-vX.Y.Z-macos-aarch64.tar.gz` |
+| macOS Intel (eksperymentalnie) | `dbdock-vX.Y.Z-macos-x86_64.tar.gz` |
 
 Nie ma instalatora: umieść plik wykonywalny w dowolnym miejscu i uruchom go.
 Sumy kontrolne są w `SHA256SUMS.txt`.
@@ -97,6 +97,14 @@ Sumy kontrolne są w `SHA256SUMS.txt`.
 - **macOS**: plik nie jest notaryzowany. Po rozpakowaniu jednorazowo usuń
   flagę kwarantanny: `xattr -d com.apple.quarantine ./dbdock`.
 - **Linux**: `tar xzf dbdock-*.tar.gz && ./dbdock-*/dbdock`.
+
+> **Obsługa macOS jest eksperymentalna.** Wersje na macOS kompilują się i
+> przechodzą wszystkie testy automatyczne na maszynach macOS w GitHub Actions,
+> ale nie były jeszcze uruchamiane na prawdziwym Macu. Jeśli masz Maca,
+> wypróbuj DBDock i daj znać, jak poszło, w
+> [Dyskusjach](https://github.com/Pascold/DBDock/discussions) albo w
+> [zgłoszeniu](https://github.com/Pascold/DBDock/issues/new/choose) — każda
+> informacja zwrotna jest mile widziana.
 
 ## Użycie
 

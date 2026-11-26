@@ -84,8 +84,8 @@ Download the file for your system from the
 |---|---|
 | Windows x86_64 | `dbdock-vX.Y.Z-windows-x86_64.exe` |
 | Linux x86_64 | `dbdock-vX.Y.Z-linux-x86_64.tar.gz` |
-| macOS Apple Silicon | `dbdock-vX.Y.Z-macos-aarch64.tar.gz` |
-| macOS Intel | `dbdock-vX.Y.Z-macos-x86_64.tar.gz` |
+| macOS Apple Silicon (experimental) | `dbdock-vX.Y.Z-macos-aarch64.tar.gz` |
+| macOS Intel (experimental) | `dbdock-vX.Y.Z-macos-x86_64.tar.gz` |
 
 There is no installer: put the executable anywhere and run it. Checksums are
 in `SHA256SUMS.txt`.
@@ -95,6 +95,13 @@ in `SHA256SUMS.txt`.
 - **macOS**: the binary is not notarized. After unpacking, remove the
   quarantine flag once: `xattr -d com.apple.quarantine ./dbdock`.
 - **Linux**: `tar xzf dbdock-*.tar.gz && ./dbdock-*/dbdock`.
+
+> **macOS support is experimental.** The macOS builds compile and pass all
+> automated tests on GitHub's macOS runners, but have not been tried on a real
+> Mac yet. If you use a Mac, please give DBDock a try and tell us how it went in
+> [Discussions](https://github.com/Pascold/DBDock/discussions) or open an
+> [issue](https://github.com/Pascold/DBDock/issues/new/choose) — feedback is
+> very welcome.
 
 ## Usage
 
