@@ -230,6 +230,14 @@ first start can take a minute.
 create users only when the data volume is empty. Use **Apply and reset data**
 (or **Reset data**) to start from scratch.
 
+**The database does not start after changing the version** — the data volume
+still holds files of the previous version, and the new server refuses them:
+`database files are incompatible with server` (PostgreSQL), an error about
+`pg_ctlcluster` and data in `/var/lib/postgresql` (PostgreSQL 18), or
+`unsupported on-disk structure` (Firebird). PostgreSQL never opens data of
+another major version, and no database supports going back to an older one.
+Use **Apply and reset data** in **Settings**, or **Reset data** on the card.
+
 **How do I reset a database?** — **Reset data** on its card removes the
 container and its volume; the next start initialises it again, including the
 sample data. For SQLite the file is deleted.

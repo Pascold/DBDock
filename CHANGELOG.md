@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **EOL** (PostgreSQL 13 and 14, MySQL 8.0, MariaDB 10.6); hovering the mark
   explains what end of life means. They stay available for testing older
   applications.
+- FAQ entry for a database that does not start after a version change.
 
 ### Changed
 
