@@ -22,6 +22,7 @@ pub fn status_text(status: EngineStatus) -> &'static str {
         EngineStatus::Healthy => t("status.healthy"),
         EngineStatus::Running => t("status.running"),
         EngineStatus::Error => t("status.error"),
+        EngineStatus::LicenseRequired => t("status.license_required"),
     }
 }
 
@@ -130,7 +131,10 @@ impl DbDockApp {
                 ui.horizontal_wrapped(|ui| {
                     let can_act = settings.enabled && !busy;
                     let up = status.is_up();
-                    if id == EngineId::InterBase && !self.config.interbase_licensed {
+                    if id == EngineId::InterBase
+                        && (!self.config.interbase_licensed
+                            || status == EngineStatus::LicenseRequired)
+                    {
                         if ui
                             .add_enabled(!busy, egui::Button::new(t("card.setup_license")))
                             .clicked()

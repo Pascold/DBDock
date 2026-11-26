@@ -5,7 +5,7 @@ use egui::{Align2, RichText};
 use super::theme::WARNING_COLOR;
 use crate::app::{Action, DbDockApp};
 use crate::docker::{compose_args, display_command};
-use crate::engines::interbase::{database_path, ISQL};
+use crate::engines::interbase::{database_path, ISQL, LICENSE_MANAGER};
 use crate::engines::EngineId;
 use crate::i18n::t;
 
@@ -17,7 +17,9 @@ impl DbDockApp {
     pub(crate) fn interbase_register_command(&self) -> String {
         display_command(&compose_args(
             &self.paths.compose_file(),
-            &["run", "--rm", "interbase"],
+            // The service command exits without a license, so the license
+            // manager is started explicitly.
+            &["run", "--rm", "interbase", LICENSE_MANAGER, "-i", "Console"],
         ))
     }
 

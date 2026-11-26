@@ -180,11 +180,17 @@ offers **Set up license…**, a short wizard that:
 1. links to the [Developer Edition registration](https://www.embarcadero.com/products/interbase/start-for-free)
    (the serial number arrives by e-mail);
 2. shows the command that runs the license manager interactively (copy it, or
-   let DBDock open a terminal with it). The license is stored in the volume
-   `dbdock_interbase-license` and survives **Reset data**;
+   let DBDock open a terminal with it). Choose **[2] Direct register**, then
+   **[4] Save** and **[5] Quit**: without Save nothing is stored. The license
+   is stored in the volume `dbdock_interbase-license` and survives
+   **Reset data**;
 3. starts InterBase normally once you confirm the registration;
 4. shows how to create a database with `isql`, for example
    `CREATE DATABASE '/opt/interbase/testdb.ib';`.
+
+If InterBase starts without a registered license, the container stops at once
+and the card shows **License required** with **Set up license…** again. Once
+the server accepts connections the card shows **Healthy**.
 
 The image exists for x86-64 only.
 

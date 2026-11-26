@@ -50,6 +50,8 @@ pub enum EngineStatus {
     Running,
     /// Unhealthy, crash-looping or initialisation failed.
     Error,
+    /// InterBase stopped because no license is registered.
+    LicenseRequired,
 }
 
 impl EngineStatus {
@@ -89,6 +91,13 @@ pub fn engine_status(
         return EngineStatus::NotCreated;
     };
     let status = container_status(main);
+
+    if id == EngineId::InterBase
+        && status == EngineStatus::Stopped
+        && main.exit_code == crate::engines::interbase::LICENSE_MISSING_EXIT
+    {
+        return EngineStatus::LicenseRequired;
+    }
 
     // SQL Server is usable only after the init container created the
     // database and the user.
@@ -226,6 +235,33 @@ mod tests {
                 false
             ),
             EngineStatus::Starting
+        );
+    }
+
+    #[test]
+    fn interbase_without_license() {
+        let id = EngineId::InterBase;
+        let exit = crate::engines::interbase::LICENSE_MISSING_EXIT;
+        assert_eq!(
+            engine_status(id, &[c("interbase", "exited", "", exit)], false),
+            EngineStatus::LicenseRequired
+        );
+        assert_eq!(
+            engine_status(id, &[c("interbase", "exited", "", 137)], false),
+            EngineStatus::Stopped
+        );
+        assert_eq!(
+            engine_status(id, &[c("interbase", "running", "healthy", 0)], false),
+            EngineStatus::Healthy
+        );
+        // Another engine exiting with the same code is just stopped.
+        assert_eq!(
+            engine_status(
+                EngineId::Postgres,
+                &[c("postgres", "exited", "", exit)],
+                false
+            ),
+            EngineStatus::Stopped
         );
     }
 

@@ -12,6 +12,24 @@ pub const HOME: &str = "/opt/interbase";
 /// Path to `isql` inside the container.
 pub const ISQL: &str = "/opt/interbase/bin/isql";
 
+/// Interactive license manager of the image.
+pub const LICENSE_MANAGER: &str = "/opt/interbase/bin/LicenseManagerLauncher";
+
+/// Exit code of the container when no license is registered (`EX_CONFIG`).
+/// Without it the image's `ibstart.sh` would sit in the license manager
+/// menu, which looks like a running server that refuses every connection.
+pub const LICENSE_MISSING_EXIT: i64 = 78;
+
+/// Starts the server only if the license manager saved a registered license
+/// (`.<serial>.slip`, the same test `ibstart.sh` makes).
+fn start_command() -> String {
+    format!(
+        "if ls -a {HOME}/license/.[0-9]*.slip >/dev/null 2>&1; then exec ./ibstart.sh; fi; \
+         echo 'DBDock: no InterBase license is registered, use Set up license in DBDock.' >&2; \
+         exit {LICENSE_MISSING_EXIT}"
+    )
+}
+
 /// Path of the database file inside the container.
 pub fn database_path(s: &EngineSettings) -> String {
     format!("{HOME}/{}.ib", s.database)
@@ -63,6 +81,10 @@ impl Engine for InterBase {
             // Never started by a plain `docker compose up`: the license
             // manager has to run interactively first.
             .with("profiles", Yaml::strings([MANUAL_PROFILE]))
+            .with(
+                "command",
+                Yaml::strings(["/bin/sh".to_owned(), "-c".into(), start_command()]),
+            )
             .with("ports", compose::ports(s.port, 3050))
             .with(
                 "volumes",
@@ -72,7 +94,12 @@ impl Engine for InterBase {
                 ]),
             )
             .with("stdin_open", true)
-            .with("tty", true);
+            .with("tty", true)
+            // Healthy once the server accepts connections on its port.
+            .with(
+                "healthcheck",
+                compose::healthcheck("bash -c '</dev/tcp/127.0.0.1/3050'", 3, 20, 5),
+            );
         vec![("interbase".into(), service)]
     }
 

@@ -183,11 +183,17 @@ karta oferuje **Skonfiguruj licencję…** — krótki kreator, który:
 1. prowadzi do [rejestracji Developer Edition](https://www.embarcadero.com/products/interbase/start-for-free)
    (numer seryjny przychodzi e-mailem);
 2. pokazuje polecenie uruchamiające interaktywnie menedżer licencji (skopiuj
-   je albo pozwól DBDock otworzyć terminal). Licencja trafia do wolumenu
-   `dbdock_interbase-license` i przetrwa **Resetuj dane**;
+   je albo pozwól DBDock otworzyć terminal). Wybierz **[2] Direct register**,
+   potem **[4] Save** i **[5] Quit**: bez Save nic się nie zapisze. Licencja
+   trafia do wolumenu `dbdock_interbase-license` i przetrwa **Resetuj dane**;
 3. uruchamia InterBase normalnie po potwierdzeniu rejestracji;
 4. pokazuje, jak utworzyć bazę w `isql`, np.
    `CREATE DATABASE '/opt/interbase/testdb.ib';`.
+
+Jeśli InterBase wystartuje bez zarejestrowanej licencji, kontener od razu się
+zatrzyma, a karta pokaże **Brak licencji** i znów przycisk
+**Skonfiguruj licencję…**. Gdy serwer przyjmuje połączenia, karta pokazuje
+**Gotowa**.
 
 Obraz istnieje tylko dla x86-64.
 

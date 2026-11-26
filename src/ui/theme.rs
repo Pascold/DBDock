@@ -44,6 +44,8 @@ pub fn status_color(status: EngineStatus, dark: bool) -> Color32 {
         (EngineStatus::Running, false) => Color32::from_rgb(0x0B, 0x7A, 0x80),
         (EngineStatus::Error, true) => Color32::from_rgb(0xF0, 0x5D, 0x5D),
         (EngineStatus::Error, false) => Color32::from_rgb(0xC6, 0x28, 0x28),
+        (EngineStatus::LicenseRequired, true) => Color32::from_rgb(0xF2, 0x8C, 0x38),
+        (EngineStatus::LicenseRequired, false) => Color32::from_rgb(0xB3, 0x50, 0x00),
     }
 }
 
