@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The sample data is in English: tables `customers` and `orders` and the
+  view `v_customer_summary` replace `klienci`, `zamowienia` and
+  `v_podsumowanie`. Names and cities still contain accented letters (Zoë,
+  Zürich, José, Łukasz, Chloé) to catch encoding bugs. Existing databases
+  keep their tables; use **Reset data** to get the new ones.
 - InterBase without a registered license no longer looks like a running
   server that refuses every connection: the container stops at once and the
   card shows "License required" with **Set up license…** again.

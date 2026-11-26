@@ -1,50 +1,51 @@
 -- DBDock sample data for SQLite.
--- Runs once, when the database file is created. Polish characters test encoding.
+-- Runs once, when the database file is created.
+-- Accented letters and other non-ASCII characters test encoding.
 PRAGMA foreign_keys = ON;
 
-CREATE TABLE klienci (
-    id        INTEGER PRIMARY KEY,
-    imie      TEXT NOT NULL,
-    nazwisko  TEXT NOT NULL,
-    email     TEXT NOT NULL UNIQUE,
-    miasto    TEXT,
-    uwagi     TEXT,
-    utworzono TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE customers (
+    id         INTEGER PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name  TEXT NOT NULL,
+    email      TEXT NOT NULL UNIQUE,
+    city       TEXT,
+    notes      TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE zamowienia (
-    id              INTEGER PRIMARY KEY,
-    klient_id       INTEGER NOT NULL REFERENCES klienci (id),
-    produkt         TEXT    NOT NULL,
-    ilosc           INTEGER NOT NULL CHECK (ilosc > 0),
-    cena            NUMERIC NOT NULL,
-    data_zamowienia TEXT    NOT NULL
+CREATE TABLE orders (
+    id          INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customers (id),
+    product     TEXT    NOT NULL,
+    quantity    INTEGER NOT NULL CHECK (quantity > 0),
+    price       NUMERIC NOT NULL,
+    order_date  TEXT    NOT NULL
 );
 
-CREATE VIEW v_podsumowanie AS
-SELECT k.id AS klient_id,
-       k.imie,
-       k.nazwisko,
-       k.miasto,
-       COUNT(z.id) AS liczba_zamowien,
-       COALESCE(SUM(z.ilosc * z.cena), 0) AS wartosc_zamowien
-FROM klienci k
-LEFT JOIN zamowienia z ON z.klient_id = k.id
-GROUP BY k.id, k.imie, k.nazwisko, k.miasto;
+CREATE VIEW v_customer_summary AS
+SELECT c.id AS customer_id,
+       c.first_name,
+       c.last_name,
+       c.city,
+       COUNT(o.id) AS order_count,
+       COALESCE(SUM(o.quantity * o.price), 0) AS order_total
+FROM customers c
+LEFT JOIN orders o ON o.customer_id = c.id
+GROUP BY c.id, c.first_name, c.last_name, c.city;
 
-INSERT INTO klienci (imie, nazwisko, email, miasto, uwagi) VALUES
-    ('Łukasz', 'Żółkiewski', 'lukasz@example.com', 'Łódź', 'Zażółć gęślą jaźń / ZAŻÓŁĆ GĘŚLĄ JAŹŃ'),
-    ('Ewa', 'Wiśniewska', 'ewa@example.com', 'Kraków', NULL),
-    ('Michał', 'Dąbrowski', 'michal@example.com', 'Gdańsk', 'Stały klient'),
-    ('Agnieszka', 'Zięba-Kołodziej', 'agnieszka@example.com', 'Poznań', NULL),
-    ('Józef', 'Ślusarczyk', 'jozef@example.com', 'Częstochowa', 'Płatność przelewem');
+INSERT INTO customers (first_name, last_name, email, city, notes) VALUES
+    ('Zoë', 'Müller', 'zoe@example.com', 'Zürich', 'UTF-8 test: Zażółć gęślą jaźń · Straße · Ærøskøbing · €'),
+    ('Emma', 'Johnson', 'emma@example.com', 'London', NULL),
+    ('José', 'García', 'jose@example.com', 'Madrid', 'Regular customer'),
+    ('Łukasz', 'Nowak-Kowalski', 'lukasz@example.com', 'Kraków', NULL),
+    ('Chloé', 'Dubois', 'chloe@example.com', 'Paris', 'Pays by bank transfer');
 
-INSERT INTO zamowienia (klient_id, produkt, ilosc, cena, data_zamowienia) VALUES
-    (1, 'Książka „Pan Tadeusz”', 1, 39.99, '2024-01-15'),
-    (1, 'Długopis żelowy', 10, 2.50, '2024-02-03'),
-    (2, 'Kawa ziarnista 1 kg', 2, 64.90, '2024-02-11'),
-    (3, 'Słuchawki bezprzewodowe', 1, 249.00, '2024-03-01'),
-    (4, 'Zeszyt w kratkę', 5, 4.20, '2024-03-07'),
-    (5, 'Ręcznik kąpielowy', 3, 29.99, '2024-03-20'),
-    (2, 'Herbata źródlana', 4, 12.75, '2024-04-02'),
-    (3, 'Łyżeczki do herbaty', 6, 7.10, '2024-04-18');
+INSERT INTO orders (customer_id, product, quantity, price, order_date) VALUES
+    (1, 'Paperback novel', 1, 39.99, '2024-01-15'),
+    (1, 'Gel pen', 10, 2.50, '2024-02-03'),
+    (2, 'Coffee beans 1 kg', 2, 64.90, '2024-02-11'),
+    (3, 'Wireless headphones', 1, 249.00, '2024-03-01'),
+    (4, 'Squared notebook', 5, 4.20, '2024-03-07'),
+    (5, 'Bath towel', 3, 29.99, '2024-03-20'),
+    (2, 'Green tea', 4, 12.75, '2024-04-02'),
+    (3, 'Teaspoons', 6, 7.10, '2024-04-18');

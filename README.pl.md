@@ -35,8 +35,9 @@ masz go zainstalowanego.
   (Gotowa, Uruchamianie, Zatrzymana, ...) z healthchecków kontenerów.
 - **Dane połączenia gotowe do skopiowania**: host, port, użytkownik, hasło
   i connection stringi (URL, JDBC, ADO.NET, Firebird, sqlcmd).
-- **Dane testowe** z polskimi znakami (ąćęłńóśźż), które wyłapują błędy
-  kodowania: tabele `klienci` i `zamowienia` oraz widok `v_podsumowanie`.
+- **Dane testowe** ze znakami diakrytycznymi (ü, é, ł, ß, €…), które
+  wyłapują błędy kodowania: tabele `customers` i `orders` oraz widok
+  `v_customer_summary`.
 - **Ustawienia każdej bazy**: wersja obrazu, port, nazwa bazy, użytkownik
   i hasła, z walidacją na żywo (konflikty portów, zajęte porty, polityka
   haseł SQL Server).

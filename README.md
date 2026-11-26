@@ -34,8 +34,8 @@ you, so you don't need to know Docker. You only need to have it installed.
   the containers' healthchecks.
 - **Ready-to-copy connection details**: host, port, user, password and
   connection strings (URL, JDBC, ADO.NET, Firebird, sqlcmd).
-- **Sample data** with Polish characters (ąćęłńóśźż) to catch encoding bugs:
-  tables `klienci` and `zamowienia` and the view `v_podsumowanie`.
+- **Sample data** with accented letters (ü, é, ł, ß, €…) to catch encoding
+  bugs: tables `customers` and `orders` and the view `v_customer_summary`.
 - **Settings per database**: image version, port, database name, user and
   passwords, with live validation (port conflicts, busy ports, SQL Server
   password policy).
