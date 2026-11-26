@@ -19,6 +19,7 @@ eframe = { version = "0.37", default-features = false, features = [
   "glow",
   "wayland",
   "x11",
+  "persistence",
 ] }
 egui = "0.37"
 open = "5.4.5"

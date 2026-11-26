@@ -575,6 +575,12 @@ impl DbDockApp {
 }
 
 impl eframe::App for DbDockApp {
+    /// Only the window size and position are persisted (by eframe, in
+    /// `window.ron`); the UI state always starts fresh.
+    fn persist_egui_memory(&self) -> bool {
+        false
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.process_events();
         let ctx = ui.ctx().clone();

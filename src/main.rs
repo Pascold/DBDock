@@ -18,7 +18,11 @@ fn main() -> eframe::Result {
     if let Ok(icon) = eframe::icon_data::from_png_bytes(ICON) {
         viewport = viewport.with_icon(Arc::new(icon));
     }
+    // Remember the window size and position next to config.toml.
+    let persistence_path =
+        dbdock::paths::AppPaths::detect().map(|paths| paths.base().join("window.ron"));
     let options = eframe::NativeOptions {
+        persistence_path,
         viewport,
         ..Default::default()
     };
