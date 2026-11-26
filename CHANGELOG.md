@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-26
+
+**Hotfix** for 0.1.1 — please update.
+
+### Fixed
+
+- Links did nothing when clicked: the footer (GitHub, Releases, Report a
+  bug, Discussions), the "Outdated" badge, the InterBase Developer Edition
+  link and the Docker download links now open in the browser.
+- The Copy buttons in the logs and command output windows now copy to the
+  clipboard.
+
 ## [0.1.1] - 2026-11-26
 
 ### Added
@@ -44,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release builds for Windows x86_64, Linux x86_64 and macOS (x86_64, aarch64)
   with SHA-256 checksums.
 
-[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Pascold/DBDock/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Pascold/DBDock/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Pascold/DBDock/releases/tag/v0.1.0
