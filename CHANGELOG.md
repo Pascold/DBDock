@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-26
+
+English sample data, a Firebird alias for the database name, EOL marks for
+old versions, and clearer InterBase license handling.
+
 ### Added
 
 - Firebird registers the database name as an alias: clients can connect to
@@ -88,7 +93,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release builds for Windows x86_64, Linux x86_64 and macOS (x86_64, aarch64)
   with SHA-256 checksums.
 
-[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/Pascold/DBDock/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/Pascold/DBDock/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Pascold/DBDock/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Pascold/DBDock/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Pascold/DBDock/releases/tag/v0.1.0
