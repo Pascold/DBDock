@@ -60,6 +60,13 @@ pub enum Action {
     OpenSettings(EngineId),
     OpenConnection(EngineId),
     OpenLogs(EngineId),
+    /// Run the user's scripts on the existing database.
+    RunScripts(EngineId),
+    OpenSnapshots(EngineId),
+    SaveSnapshot(EngineId),
+    /// Engine and snapshot name.
+    RestoreSnapshot(EngineId, String),
+    DeleteSnapshot(EngineId, String),
     /// Copy text to the clipboard.
     Copy(String),
     /// Copy the main connection string of an engine.
@@ -96,6 +103,7 @@ pub struct DbDockApp {
     pub(crate) settings: Option<SettingsDraft>,
     pub(crate) connection_window: Option<EngineId>,
     pub(crate) logs_window: Option<LogsWindow>,
+    pub(crate) snapshots_window: Option<crate::ui::snapshots::SnapshotsWindow>,
     pub(crate) confirm_reset: Option<EngineId>,
     pub(crate) interbase_wizard: bool,
     /// Kept alive: on X11 the clipboard content disappears with its owner.
@@ -141,6 +149,7 @@ impl DbDockApp {
             settings: None,
             connection_window: None,
             logs_window: None,
+            snapshots_window: None,
             confirm_reset: None,
             interbase_wizard: false,
             clipboard: None,
@@ -326,6 +335,9 @@ impl DbDockApp {
             }
         }
         self.update_statuses();
+        if matches!(kind, OpKind::SaveSnapshot | OpKind::RestoreSnapshot) {
+            self.refresh_snapshots();
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -356,6 +368,14 @@ impl DbDockApp {
             Action::ShowOutput(op) => self.output_window = Some(op),
             Action::OpenConnection(id) => self.connection_window = Some(id),
             Action::OpenLogs(id) => self.logs_window = Some(LogsWindow::new(id)),
+            Action::RunScripts(id) => self.run_scripts(id),
+            Action::OpenSnapshots(id) => {
+                self.snapshots_window =
+                    Some(crate::ui::snapshots::SnapshotsWindow::new(id, &self.paths));
+            }
+            Action::SaveSnapshot(id) => self.save_snapshot(id),
+            Action::RestoreSnapshot(id, name) => self.restore_snapshot(id, &name),
+            Action::DeleteSnapshot(id, name) => self.delete_snapshot(id, &name),
             Action::Copy(text) => self.copy(ctx, text),
             Action::CopyConnection(id) => {
                 let info = id.engine().connection(self.config.engine(id), &self.paths);
@@ -562,6 +582,27 @@ impl DbDockApp {
         engines: Vec<EngineId>,
         disable_after: Option<EngineId>,
     ) -> Option<OpId> {
+        self.begin_op(kind, engines, disable_after, None)
+    }
+
+    /// Starts an operation whose Docker invocations the caller prepared
+    /// (see [`OpKind::is_planned`]).
+    fn start_planned(
+        &mut self,
+        kind: OpKind,
+        id: EngineId,
+        commands: Vec<Vec<String>>,
+    ) -> Option<OpId> {
+        self.begin_op(kind, vec![id], None, Some(commands))
+    }
+
+    fn begin_op(
+        &mut self,
+        kind: OpKind,
+        engines: Vec<EngineId>,
+        disable_after: Option<EngineId>,
+        plan: Option<Vec<Vec<String>>>,
+    ) -> Option<OpId> {
         if !self
             .docker_check
             .as_ref()
@@ -587,8 +628,12 @@ impl DbDockApp {
                 return None;
             }
         }
+        // Also refreshes the init folders that "Run now" reads.
         let file = self.write_compose()?;
-        let id = self.docker.run_op(kind, &file, &engines);
+        let id = match plan {
+            Some(commands) => self.docker.run_commands(commands),
+            None => self.docker.run_op(kind, &file, &engines),
+        };
         self.operations.push(Operation {
             id,
             kind,
@@ -599,6 +644,114 @@ impl DbDockApp {
             then: None,
         });
         Some(id)
+    }
+
+    // -----------------------------------------------------------------------
+    // Scripts and snapshots
+    // -----------------------------------------------------------------------
+
+    fn run_scripts(&mut self, id: EngineId) {
+        let settings = self.config.engine(id);
+        let Some(args) = id.engine().run_scripts_args(settings) else {
+            return;
+        };
+        if crate::compose::user_scripts(&self.paths, id).is_empty() {
+            self.toasts.info(tf(
+                "app.no_scripts",
+                &[("path", &self.paths.scripts_dir(id).display())],
+            ));
+            return;
+        }
+        // SQLite needs its file, servers need to run.
+        let ready = match id {
+            EngineId::Sqlite => self.status(id) == EngineStatus::Healthy,
+            _ => self.status(id).is_up(),
+        };
+        if !ready {
+            self.toasts.info(tf(
+                "app.scripts_not_running",
+                &[("engine", &id.display_name())],
+            ));
+            return;
+        }
+        let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        let command = crate::docker::compose_args(&self.paths.compose_file(), &args);
+        if let Some(op) = self.start_planned(OpKind::RunScripts, id, vec![command]) {
+            // The output of the scripts is what the user wants to see.
+            self.output_window = Some(op);
+        }
+    }
+
+    /// Engines with a server that runs now; snapshots stop and restart it.
+    fn server_up(&self, id: EngineId) -> bool {
+        id != EngineId::Sqlite && self.status(id).is_up()
+    }
+
+    fn save_snapshot(&mut self, id: EngineId) {
+        let settings = self.config.engine(id).clone();
+        let snapshot = match crate::snapshots::prepare(&self.paths, id, &settings) {
+            Ok(snapshot) => snapshot,
+            Err(e) => {
+                self.toasts.error(tf(
+                    "app.create_dir_failed",
+                    &[
+                        ("path", &self.paths.snapshots_dir(id).display()),
+                        ("error", &e),
+                    ],
+                ));
+                return;
+            }
+        };
+        let owner = ComposeContext::for_host(&self.paths).owner;
+        let commands = crate::snapshots::save_commands(
+            &self.paths,
+            id,
+            &settings,
+            &snapshot,
+            self.server_up(id),
+            owner,
+        );
+        self.start_planned(OpKind::SaveSnapshot, id, commands);
+        self.refresh_snapshots();
+    }
+
+    fn restore_snapshot(&mut self, id: EngineId, name: &str) {
+        let settings = self.config.engine(id).clone();
+        let Some(snapshot) = crate::snapshots::list(&self.paths, id)
+            .into_iter()
+            .find(|s| s.name == name)
+        else {
+            self.refresh_snapshots();
+            return;
+        };
+        if !snapshot.complete || !snapshot.fits(id, &settings) {
+            return;
+        }
+        let owner = ComposeContext::for_host(&self.paths).owner;
+        let commands = crate::snapshots::restore_commands(
+            &self.paths,
+            id,
+            &settings,
+            &snapshot,
+            self.server_up(id),
+            owner,
+        );
+        self.start_planned(OpKind::RestoreSnapshot, id, commands);
+    }
+
+    fn delete_snapshot(&mut self, id: EngineId, name: &str) {
+        if let Some(snapshot) = crate::snapshots::list(&self.paths, id)
+            .into_iter()
+            .find(|s| s.name == name)
+        {
+            if let Err(e) = crate::snapshots::delete(&snapshot) {
+                self.toasts.error(tf(
+                    "app.delete_failed",
+                    &[("path", &snapshot.dir.display()), ("error", &e)],
+                ));
+            }
+        }
+        self.refresh_snapshots();
     }
 }
 
@@ -624,6 +777,7 @@ impl eframe::App for DbDockApp {
         self.settings_window_ui(&ctx);
         self.connection_window_ui(&ctx, &mut actions);
         self.logs_window_ui(&ctx);
+        self.snapshots_window_ui(&ctx, &mut actions);
         self.reset_confirm_ui(&ctx, &mut actions);
         self.interbase_wizard_ui(&ctx, &mut actions);
         self.output_window_ui(&ctx);
@@ -677,6 +831,9 @@ pub(crate) fn kind_text(kind: OpKind) -> &'static str {
         OpKind::Recreate => "op.running.recreate",
         OpKind::Reset => "op.running.reset",
         OpKind::Remove => "op.running.remove",
+        OpKind::RunScripts => "op.running.run_scripts",
+        OpKind::SaveSnapshot => "op.running.save_snapshot",
+        OpKind::RestoreSnapshot => "op.running.restore_snapshot",
     })
 }
 
@@ -689,6 +846,9 @@ fn done_key(kind: OpKind) -> &'static str {
         OpKind::Recreate => "op.done.recreate",
         OpKind::Reset => "op.done.reset",
         OpKind::Remove => "op.done.remove",
+        OpKind::RunScripts => "op.done.run_scripts",
+        OpKind::SaveSnapshot => "op.done.save_snapshot",
+        OpKind::RestoreSnapshot => "op.done.restore_snapshot",
     }
 }
 

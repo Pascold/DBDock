@@ -20,6 +20,7 @@ impl Engine for MariaDb {
             password: defaults::PASSWORD.into(),
             admin_password: defaults::ROOT_PASSWORD.into(),
             seed: true,
+            lan_access: false,
         }
     }
 
@@ -32,6 +33,7 @@ impl Engine for MariaDb {
             Field::Password,
             Field::AdminPassword,
             Field::Seed,
+            Field::LanAccess,
         ]
     }
 
@@ -72,7 +74,7 @@ impl Engine for MariaDb {
                     ("MARIADB_ROOT_PASSWORD", s.admin_password.as_str()),
                 ]),
             )
-            .with("ports", compose::ports(s.port, 3306))
+            .with("ports", compose::ports(s, 3306))
             .with("volumes", Yaml::Seq(volumes))
             .with(
                 "healthcheck",
@@ -87,6 +89,15 @@ impl Engine for MariaDb {
 
     fn uses_initdb_dir(&self) -> bool {
         true
+    }
+
+    fn run_scripts_args(&self, _s: &EngineSettings) -> Option<Vec<String>> {
+        let run =
+            "MYSQL_PWD=\"$MARIADB_ROOT_PASSWORD\" mariadb -uroot \"$MARIADB_DATABASE\" < \"$f\"";
+        Some(super::exec_args(
+            "mariadb",
+            super::scripts_loop(super::INIT_SCRIPTS, run),
+        ))
     }
 
     fn start_services(&self) -> &'static [&'static str] {

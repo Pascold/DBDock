@@ -20,6 +20,7 @@ impl Engine for MySql {
             password: defaults::PASSWORD.into(),
             admin_password: defaults::ROOT_PASSWORD.into(),
             seed: true,
+            lan_access: false,
         }
     }
 
@@ -32,6 +33,7 @@ impl Engine for MySql {
             Field::Password,
             Field::AdminPassword,
             Field::Seed,
+            Field::LanAccess,
         ]
     }
 
@@ -72,7 +74,7 @@ impl Engine for MySql {
                     ("MYSQL_ROOT_PASSWORD", s.admin_password.as_str()),
                 ]),
             )
-            .with("ports", compose::ports(s.port, 3306))
+            .with("ports", compose::ports(s, 3306))
             .with("volumes", Yaml::Seq(volumes))
             .with(
                 "healthcheck",
@@ -94,6 +96,14 @@ impl Engine for MySql {
 
     fn uses_initdb_dir(&self) -> bool {
         true
+    }
+
+    fn run_scripts_args(&self, _s: &EngineSettings) -> Option<Vec<String>> {
+        let run = "MYSQL_PWD=\"$MYSQL_ROOT_PASSWORD\" mysql -uroot \"$MYSQL_DATABASE\" < \"$f\"";
+        Some(super::exec_args(
+            "mysql",
+            super::scripts_loop(super::INIT_SCRIPTS, run),
+        ))
     }
 
     fn start_services(&self) -> &'static [&'static str] {

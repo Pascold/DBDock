@@ -243,6 +243,17 @@ impl SettingsDraft {
                 Field::Seed => {
                     ui.checkbox(&mut self.settings.seed, t("settings.seed_label"));
                 }
+                Field::LanAccess => {
+                    ui.checkbox(&mut self.settings.lan_access, t("settings.lan_label"));
+                    if self.settings.lan_access {
+                        ui.add(
+                            egui::Label::new(
+                                RichText::new(t("settings.lan_warning")).color(WARNING_COLOR),
+                            )
+                            .wrap(),
+                        );
+                    }
+                }
             }
             for issue in issues.iter().filter(|i| i.field == field) {
                 let color = match issue.severity() {
@@ -287,6 +298,7 @@ fn field_label(id: EngineId, field: Field) -> String {
             &[("user", &id.engine().admin_user().unwrap_or("admin"))],
         ),
         Field::Seed => t("settings.field.seed").into(),
+        Field::LanAccess => t("settings.field.lan").into(),
     }
 }
 

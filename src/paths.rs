@@ -65,4 +65,9 @@ impl AppPaths {
     pub fn init_dir(&self, id: EngineId) -> PathBuf {
         self.base.join("init").join(id.key())
     }
+
+    /// Saved copies of an engine's data, see [`crate::snapshots`].
+    pub fn snapshots_dir(&self, id: EngineId) -> PathBuf {
+        self.base.join("snapshots").join(id.key())
+    }
 }

@@ -51,6 +51,7 @@ impl Engine for InterBase {
             password: String::new(),
             admin_password: defaults::SYSDBA_PASSWORD.into(),
             seed: false,
+            lan_access: false,
         }
     }
 
@@ -60,6 +61,7 @@ impl Engine for InterBase {
             Field::Port,
             Field::Database,
             Field::AdminPassword,
+            Field::LanAccess,
         ]
     }
 
@@ -85,7 +87,7 @@ impl Engine for InterBase {
                 "command",
                 Yaml::strings(["/bin/sh".to_owned(), "-c".into(), start_command()]),
             )
-            .with("ports", compose::ports(s.port, 3050))
+            .with("ports", compose::ports(s, 3050))
             .with(
                 "volumes",
                 Yaml::Seq(vec![

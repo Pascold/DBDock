@@ -94,6 +94,9 @@ impl DbDockApp {
                                 tf("card.port", &[("port", &settings.port)])
                             ));
                         }
+                        if settings.lan_access && engine.uses(Field::LanAccess) {
+                            details.push_str(&format!("  ·  {}", t("card.lan")));
+                        }
                         ui.label(RichText::new(details).weak());
                     });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
@@ -211,17 +214,37 @@ impl DbDockApp {
                     {
                         actions.push(Action::OpenLogs(id));
                     }
-                    if engine.custom_scripts()
+                    if engine.custom_scripts() {
+                        ui.menu_button(t("card.scripts"), |ui| {
+                            // The folder is read only while the menu is open.
+                            let count = crate::compose::user_scripts(&self.paths, id).len();
+                            ui.label(
+                                RichText::new(tf("card.scripts_hint", &[("count", &count)])).weak(),
+                            );
+                            ui.separator();
+                            if ui.button(t("card.scripts_open")).clicked() {
+                                actions.push(Action::OpenFolder(self.paths.scripts_dir(id)));
+                                ui.close();
+                            }
+                            let can_run =
+                                !busy && count > 0 && engine.run_scripts_args(settings).is_some();
+                            if ui
+                                .add_enabled(can_run, egui::Button::new(t("card.scripts_run")))
+                                .on_hover_text(t("card.scripts_run_hint"))
+                                .clicked()
+                            {
+                                actions.push(Action::RunScripts(id));
+                                ui.close();
+                            }
+                        });
+                    }
+                    if crate::snapshots::supported(id)
                         && ui
-                            .button(t("card.scripts"))
-                            .on_hover_ui(|ui| {
-                                // Read the folder only while hovering.
-                                let count = crate::compose::user_scripts(&self.paths, id).len();
-                                ui.label(tf("card.scripts_hint", &[("count", &count)]));
-                            })
+                            .add_enabled(!busy, egui::Button::new(t("card.snapshots")))
+                            .on_hover_text(t("card.snapshots_hint"))
                             .clicked()
                     {
-                        actions.push(Action::OpenFolder(self.paths.scripts_dir(id)));
+                        actions.push(Action::OpenSnapshots(id));
                     }
                     if ui
                         .add_enabled(

@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 pub use yaml::Yaml;
 
-use crate::config::{write_atomic, AppConfig, ConfigError};
+use crate::config::{write_atomic, AppConfig, ConfigError, EngineSettings};
 use crate::engines::EngineId;
 use crate::paths::AppPaths;
 
@@ -187,9 +187,11 @@ pub fn environment<'v>(pairs: impl IntoIterator<Item = (&'static str, &'v str)>)
     })
 }
 
-/// Port published on the loopback interface only.
-pub fn ports(host: u16, container: u16) -> Yaml {
-    Yaml::strings([format!("127.0.0.1:{host}:{container}")])
+/// Published port: on the loopback interface only, unless the user allowed
+/// access from the network.
+pub fn ports(s: &EngineSettings, container: u16) -> Yaml {
+    let ip = if s.lan_access { "0.0.0.0" } else { "127.0.0.1" };
+    Yaml::strings([format!("{ip}:{}:{container}", s.port)])
 }
 
 /// Long-syntax bind mount (safe for Windows paths with drive letters).
@@ -292,6 +294,22 @@ mod tests {
     #[test]
     fn dollar_signs_are_escaped() {
         assert_eq!(escape("a$b$$c"), "a$$b$$$$c");
+    }
+
+    #[test]
+    fn ports_are_local_unless_network_access_is_allowed() {
+        let mut s = EngineId::Postgres.engine().default_settings();
+        assert_eq!(ports(&s, 5432), Yaml::strings(["127.0.0.1:5432:5432"]));
+        s.lan_access = true;
+        s.port = 15432;
+        assert_eq!(ports(&s, 5432), Yaml::strings(["0.0.0.0:15432:5432"]));
+        // Older config files have no lan_access field.
+        let old: EngineSettings = toml::from_str(
+            "enabled = true\nversion = \"17\"\nport = 5432\ndatabase = \"testdb\"\n\
+             user = \"tester\"\npassword = \"x\"\nadmin_password = \"\"\nseed = true\n",
+        )
+        .unwrap();
+        assert!(!old.lan_access);
     }
 
     #[test]

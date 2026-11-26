@@ -85,6 +85,10 @@ pub struct EngineSettings {
     pub admin_password: String,
     /// Load the sample data on first start.
     pub seed: bool,
+    /// Publish the port on all interfaces, so other computers in the
+    /// network can connect. Off by default: only this computer can.
+    #[serde(default)]
+    pub lan_access: bool,
 }
 
 impl EngineSettings {

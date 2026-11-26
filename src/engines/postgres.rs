@@ -20,6 +20,7 @@ impl Engine for Postgres {
             password: defaults::PASSWORD.into(),
             admin_password: String::new(),
             seed: true,
+            lan_access: false,
         }
     }
 
@@ -31,6 +32,7 @@ impl Engine for Postgres {
             Field::User,
             Field::Password,
             Field::Seed,
+            Field::LanAccess,
         ]
     }
 
@@ -66,7 +68,7 @@ impl Engine for Postgres {
                     ("POSTGRES_PASSWORD", s.password.as_str()),
                 ]),
             )
-            .with("ports", compose::ports(s.port, 5432))
+            .with("ports", compose::ports(s, 5432))
             .with("volumes", Yaml::Seq(volumes))
             .with(
                 "healthcheck",
@@ -88,6 +90,14 @@ impl Engine for Postgres {
 
     fn uses_initdb_dir(&self) -> bool {
         true
+    }
+
+    fn run_scripts_args(&self, _s: &EngineSettings) -> Option<Vec<String>> {
+        let run = "psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -f \"$f\"";
+        Some(super::exec_args(
+            "postgres",
+            super::scripts_loop(super::INIT_SCRIPTS, run),
+        ))
     }
 
     fn start_services(&self) -> &'static [&'static str] {

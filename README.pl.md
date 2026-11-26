@@ -40,7 +40,10 @@ masz go zainstalowanego.
   `v_customer_summary`.
 - **Własne skrypty**: wrzuć pliki `.sql` do folderu **Skrypty** danej bazy, a
   wykonają się w kolejności nazw, po danych testowych, przy tworzeniu jej
-  danych (wszystkie bazy oprócz InterBase).
+  danych albo na istniejącej bazie przez **Skrypty → Uruchom teraz**
+  (wszystkie bazy oprócz InterBase).
+- **Migawki**: zapisz dane bazy i przywróć je później, na przykład przed
+  każdym testem. Migawka pasuje do wersji, z którą ją zapisano.
 - **Ustawienia każdej bazy**: wersja obrazu, port, nazwa bazy, użytkownik
   i hasła, z walidacją na żywo (konflikty portów, zajęte porty, polityka
   haseł SQL Server).
@@ -256,8 +259,11 @@ Linuksie usługa `docker`, a Twój użytkownik jest w grupie `docker`), i klikni
 **Sprawdź ponownie**. Na macOS DBDock szuka też w `/usr/local/bin`,
 `/opt/homebrew/bin` i `~/.docker/bin`.
 
-**Czy inne komputery mogą się połączyć?** — Nie, porty są celowo przypięte do
-`127.0.0.1`.
+**Czy inne komputery mogą się połączyć?** — Domyślnie nie: porty są przypięte
+do `127.0.0.1`. Włącz **Dostęp z sieci** w **Ustawieniach** bazy, żeby wystawić
+jej port na wszystkich interfejsach; wtedy każdy w Twojej sieci, kto zna
+użytkownika i hasło, może się połączyć, więc używaj tego tylko w zaufanej
+sieci. Łącz się przez adres IP tego komputera zamiast `localhost`.
 
 ## Budowanie ze źródeł
 
@@ -278,7 +284,6 @@ który sprawdza wygenerowane pliki przez `docker compose config`.
 
 - Kolejne silniki: Oracle Database Free, IBM Db2, ClickHouse, MongoDB, Redis.
 - Kilka instancji lub wersji tego samego silnika jednocześnie.
-- Opcjonalny dostęp z sieci lokalnej (`0.0.0.0`) dla wybranych baz.
 - Podpisane i notaryzowane wydania, paczka aplikacji dla macOS.
 
 Pomysły i pull requesty są mile widziane.

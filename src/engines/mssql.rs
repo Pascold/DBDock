@@ -26,6 +26,7 @@ impl Engine for MsSql {
             password: defaults::PASSWORD.into(),
             admin_password: defaults::SA_PASSWORD.into(),
             seed: true,
+            lan_access: false,
         }
     }
 
@@ -38,6 +39,7 @@ impl Engine for MsSql {
             Field::Password,
             Field::AdminPassword,
             Field::Seed,
+            Field::LanAccess,
         ]
     }
 
@@ -64,7 +66,7 @@ impl Engine for MsSql {
                     ("MSSQL_SA_PASSWORD", s.admin_password.as_str()),
                 ]),
             )
-            .with("ports", compose::ports(s.port, 1433))
+            .with("ports", compose::ports(s, 1433))
             .with(
                 "volumes",
                 Yaml::Seq(vec![compose::volume("mssql-data", "/var/opt/mssql")]),
@@ -144,6 +146,19 @@ impl Engine for MsSql {
 
     fn volumes(&self) -> &'static [&'static str] {
         &["mssql-data"]
+    }
+
+    // The init container has the scripts mounted and reaches the server.
+    fn run_scripts_args(&self, _s: &EngineSettings) -> Option<Vec<String>> {
+        let run = format!(
+            "{SQLCMD} -S mssql -U sa -P \"$MSSQL_SA_PASSWORD\" -C -b -f 65001 \
+             -d \"$DBDOCK_DB\" -i \"$f\""
+        );
+        Some(super::run_args(
+            "mssql-init",
+            "/bin/bash",
+            super::scripts_loop("/dbdock-scripts/*.sql", &run),
+        ))
     }
 
     fn start_services(&self) -> &'static [&'static str] {

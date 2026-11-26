@@ -37,8 +37,12 @@ you, so you don't need to know Docker. You only need to have it installed.
 - **Sample data** with accented letters (ü, é, ł, ß, €…) to catch encoding
   bugs: tables `customers` and `orders` and the view `v_customer_summary`.
 - **Your own scripts**: put `.sql` files in a database's **Scripts** folder and
-  they run in name order, after the sample data, when its data is created
-  (all databases except InterBase).
+  they run in name order, after the sample data, when its data is created,
+  or on the existing database with **Scripts → Run now** (all databases
+  except InterBase).
+- **Snapshots**: save the data of a database and restore it later, for
+  example before every test run. A snapshot fits the version it was saved
+  with.
 - **Settings per database**: image version, port, database name, user and
   passwords, with live validation (port conflicts, busy ports, SQL Server
   password policy).
@@ -252,8 +256,11 @@ sample data. For SQLite the file is deleted.
 click **Check again**. On macOS, DBDock also looks in `/usr/local/bin`,
 `/opt/homebrew/bin` and `~/.docker/bin`.
 
-**Can other computers connect?** — No, ports are bound to `127.0.0.1` on
-purpose.
+**Can other computers connect?** — Not by default: ports are bound to
+`127.0.0.1`. Turn on **Network access** in a database's **Settings** to publish
+its port on all interfaces; then anyone in your network who knows the user and
+password can connect, so use it only in a trusted network. Connect with this
+computer's IP address instead of `localhost`.
 
 ## Building from source
 
@@ -274,7 +281,6 @@ which validates generated files with `docker compose config`.
 
 - More engines: Oracle Database Free, IBM Db2, ClickHouse, MongoDB, Redis.
 - Several instances or versions of the same engine side by side.
-- Optional LAN access (binding to `0.0.0.0`) per database.
 - Signed and notarized releases, a macOS app bundle.
 
 Ideas and pull requests are welcome.

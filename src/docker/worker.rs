@@ -32,6 +32,23 @@ pub enum OpKind {
     Reset,
     /// Remove containers but keep data (used when an engine is disabled).
     Remove,
+    /// Run the user's scripts on the existing database ("Run now").
+    RunScripts,
+    /// Copy the data volume into a snapshot folder.
+    SaveSnapshot,
+    /// Replace the data with a snapshot.
+    RestoreSnapshot,
+}
+
+impl OpKind {
+    /// Operations whose commands the app builds itself (they need settings
+    /// or a snapshot) and passes to [`Docker::run_commands`].
+    pub fn is_planned(self) -> bool {
+        matches!(
+            self,
+            OpKind::RunScripts | OpKind::SaveSnapshot | OpKind::RestoreSnapshot
+        )
+    }
 }
 
 /// Messages from background threads to the UI.
@@ -132,9 +149,13 @@ impl Docker {
     /// Runs an operation on `engines` in the background. Output lines and
     /// the result arrive as events tagged with the returned id.
     pub fn run_op(&mut self, kind: OpKind, compose_file: &Path, engines: &[EngineId]) -> OpId {
+        self.run_commands(op_commands(kind, compose_file, engines))
+    }
+
+    /// Runs prepared Docker invocations one after another in the background.
+    pub fn run_commands(&mut self, commands: Vec<Vec<String>>) -> OpId {
         self.next_op += 1;
         let op = self.next_op;
-        let commands = op_commands(kind, compose_file, engines);
         let sender = self.sender();
         let poke = self.poke.clone();
         std::thread::spawn(move || {
@@ -246,6 +267,8 @@ pub fn op_commands(kind: OpKind, compose_file: &Path, engines: &[EngineId]) -> V
         OpKind::Restart => vec![compose(&["restart"])],
         OpKind::Recreate => vec![compose(&["up", "-d", "--force-recreate"])],
         OpKind::Remove => vec![compose(&["rm", "--stop", "--force"])],
+        // Built by the app, see `OpKind::is_planned`.
+        OpKind::RunScripts | OpKind::SaveSnapshot | OpKind::RestoreSnapshot => Vec::new(),
         OpKind::Reset => {
             let mut commands = vec![compose(&["rm", "--stop", "--force", "--volumes"])];
             let volumes: Vec<String> = engines

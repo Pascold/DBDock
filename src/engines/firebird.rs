@@ -48,6 +48,7 @@ impl Engine for Firebird {
             password: defaults::PASSWORD.into(),
             admin_password: defaults::SYSDBA_PASSWORD.into(),
             seed: true,
+            lan_access: false,
         }
     }
 
@@ -60,6 +61,7 @@ impl Engine for Firebird {
             Field::Password,
             Field::AdminPassword,
             Field::Seed,
+            Field::LanAccess,
         ]
     }
 
@@ -104,7 +106,7 @@ impl Engine for Firebird {
                     ("FIREBIRD_CONF_WireCrypt", "Enabled"),
                 ]),
             )
-            .with("ports", compose::ports(s.port, 3050))
+            .with("ports", compose::ports(s, 3050))
             .with("volumes", Yaml::Seq(volumes))
             .with("healthcheck", compose::healthcheck(&health, 3, 40, 5));
         vec![("firebird".into(), service)]
@@ -116,6 +118,19 @@ impl Engine for Firebird {
 
     fn uses_initdb_dir(&self) -> bool {
         true
+    }
+
+    // As the database owner, like the init scripts of the image.
+    fn run_scripts_args(&self, s: &EngineSettings) -> Option<Vec<String>> {
+        let run = format!(
+            "/opt/firebird/bin/isql -b -q -user \"$FIREBIRD_USER\" \
+             -password \"$FIREBIRD_PASSWORD\" -i \"$f\" {HOST}:{}",
+            database_path(s)
+        );
+        Some(super::exec_args(
+            "firebird",
+            super::scripts_loop(super::INIT_SCRIPTS, &run),
+        ))
     }
 
     fn start_services(&self) -> &'static [&'static str] {

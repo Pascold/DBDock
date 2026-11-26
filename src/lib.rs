@@ -10,6 +10,7 @@ pub mod docker;
 pub mod engines;
 pub mod i18n;
 pub mod paths;
+pub mod snapshots;
 pub mod terminal;
 pub mod ui;
 pub mod update;

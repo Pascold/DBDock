@@ -4,6 +4,7 @@ pub mod cards;
 pub mod docker_missing;
 pub mod interbase;
 pub mod settings;
+pub mod snapshots;
 pub mod theme;
 pub mod toasts;
 pub mod windows;

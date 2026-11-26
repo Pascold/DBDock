@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Scripts → Run now** runs your scripts on the existing database right
+  away, with the client inside the container (`psql`, `mysql`, `mariadb`,
+  `isql`, `sqlcmd`, `sqlite3`). The output window shows each script; the
+  first error stops the run.
+- **Snapshots**: save the data of a database and restore it later. A
+  throwaway Alpine container copies the data volume (or the SQLite file)
+  into `snapshots/<engine>/<time>` in the data directory; a running
+  database is stopped for the copy and started again. A snapshot can only
+  be restored with the version it was saved with (any for SQLite), and
+  restoring asks first.
+- **Network access** in a database's Settings publishes its port on
+  `0.0.0.0` so other computers can connect, with a warning; the card shows
+  "open to the network". Off by default.
+
+### Changed
+
+- The **Scripts** button is a menu: open the folder or run the scripts now.
+- The Windows executable names its company, internal and original file name
+  in its properties, next to the product name, description and version.
+
 ## [0.1.4] - 2026-11-26
 
 Cards explain why a database does not start, your own SQL scripts run when

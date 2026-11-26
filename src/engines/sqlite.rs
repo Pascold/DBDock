@@ -28,6 +28,7 @@ impl Engine for Sqlite {
             password: String::new(),
             admin_password: String::new(),
             seed: true,
+            lan_access: false,
         }
     }
 
@@ -99,6 +100,18 @@ impl Engine for Sqlite {
             .with("entrypoint", Yaml::strings(["/bin/sh", "-c", &script]))
             .with("restart", "no");
         vec![("sqlite".into(), service)]
+    }
+
+    fn run_scripts_args(&self, _s: &EngineSettings) -> Option<Vec<String>> {
+        let script = format!(
+            "set -e\n\
+             apk add --no-cache sqlite > /dev/null\n\
+             db=\"/data/$DBDOCK_DB\"\n\
+             if [ ! -f \"$db\" ]; then echo \"DBDock: $db does not exist yet\" >&2; exit 1; fi\n\
+             {}",
+            super::scripts_loop("/dbdock-scripts/*.sql", "sqlite3 -bail \"$db\" < \"$f\"")
+        );
+        Some(super::run_args("sqlite", "/bin/sh", script))
     }
 
     fn start_services(&self) -> &'static [&'static str] {

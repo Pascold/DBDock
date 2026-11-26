@@ -127,7 +127,7 @@ pub fn validate_engine(
                     push(field, Problem::WeakMssqlPassword);
                 }
             }
-            Field::Seed => {}
+            Field::Seed | Field::LanAccess => {}
         }
     }
     issues

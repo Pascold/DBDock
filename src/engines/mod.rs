@@ -97,6 +97,7 @@ pub enum Field {
     Password,
     AdminPassword,
     Seed,
+    LanAccess,
 }
 
 /// Behaviour shared by all engines.
@@ -173,6 +174,12 @@ pub trait Engine: Sync {
     /// then mounts [`AppPaths::init_dir`] there.
     fn uses_initdb_dir(&self) -> bool {
         false
+    }
+
+    /// `docker compose` arguments that run the user's scripts on the
+    /// existing database right now ("Run now"), if the engine can.
+    fn run_scripts_args(&self, _settings: &EngineSettings) -> Option<Vec<String>> {
+        None
     }
 
     /// Extra files written next to the seeds (`(file name, contents)`).
@@ -275,9 +282,91 @@ pub(crate) mod defaults {
     pub const SYSDBA_PASSWORD: &str = "masterkey";
 }
 
+// ---------------------------------------------------------------------------
+// "Run now" helpers. These arguments go straight to the Docker CLI, not
+// through the compose file, so `$` is not escaped.
+// ---------------------------------------------------------------------------
+
+/// Shell loop that runs every file matching `glob` with `command` (which
+/// refers to the file as `"$f"`), in name order, stopping at the first
+/// error. Copies in the init folder are named `20-<name>`; the output shows
+/// the original name.
+pub(crate) fn scripts_loop(glob: &str, command: &str) -> String {
+    format!(
+        "set -e\n\
+         found=0\n\
+         for f in {glob}; do\n  \
+           [ -e \"$f\" ] || continue\n  \
+           found=1\n  \
+           n=\"${{f##*/}}\"\n  \
+           echo \"DBDock: running ${{n#20-}}\"\n  \
+           {command}\n\
+         done\n\
+         if [ \"$found\" = 0 ]; then echo \"DBDock: no .sql files to run\"; fi\n"
+    )
+}
+
+/// `exec -T <service> sh -c <script>`: runs in the running server.
+pub(crate) fn exec_args(service: &str, script: String) -> Vec<String> {
+    ["exec", "-T", service, "sh", "-c"]
+        .map(str::to_owned)
+        .into_iter()
+        .chain([script])
+        .collect()
+}
+
+/// `run --rm --no-deps -T --entrypoint <shell> <service> -c <script>`: a
+/// one-off container of a helper service that has the scripts mounted.
+pub(crate) fn run_args(service: &str, shell: &str, script: String) -> Vec<String> {
+    [
+        "run",
+        "--rm",
+        "--no-deps",
+        "-T",
+        "--entrypoint",
+        shell,
+        service,
+        "-c",
+    ]
+    .map(str::to_owned)
+    .into_iter()
+    .chain([script])
+    .collect()
+}
+
+/// Files of the init folder that came from the user's scripts.
+pub(crate) const INIT_SCRIPTS: &str = "/docker-entrypoint-initdb.d/20-*.sql";
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scripts_loop_runs_each_file_and_stops_on_errors() {
+        let script = scripts_loop("/s/*.sql", "psql -f \"$f\"");
+        assert!(script.starts_with("set -e\n"));
+        assert!(script.contains("for f in /s/*.sql; do"));
+        assert!(script.contains("  psql -f \"$f\"\n"));
+        assert!(script.contains("echo \"DBDock: running ${n#20-}\""));
+        assert_eq!(
+            exec_args("postgres", "x".into()),
+            ["exec", "-T", "postgres", "sh", "-c", "x"]
+        );
+        assert_eq!(
+            run_args("sqlite", "/bin/sh", "y".into()),
+            [
+                "run",
+                "--rm",
+                "--no-deps",
+                "-T",
+                "--entrypoint",
+                "/bin/sh",
+                "sqlite",
+                "-c",
+                "y"
+            ]
+        );
+    }
 
     #[test]
     fn keys_round_trip() {
