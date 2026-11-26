@@ -230,21 +230,6 @@ first start can take a minute.
 create users only when the data volume is empty. Use **Apply and reset data**
 (or **Reset data**) to start from scratch.
 
-**The database does not start after changing the version** — the data volume
-still holds files of the previous version, and the new server refuses them:
-`database files are incompatible with server` (PostgreSQL), an error about
-`pg_ctlcluster` and data in `/var/lib/postgresql` (PostgreSQL 18), or
-`unsupported on-disk structure` (Firebird). PostgreSQL never opens data of
-another major version, and no database supports going back to an older one.
-Use **Apply and reset data** in **Settings**, or **Reset data** on the card.
-
-**Firebird 3 in HeidiSQL: "feature is not supported"** — the server works;
-HeidiSQL with `fbclient-4.0.dll` cannot talk to Firebird 3. Put the
-`fbclient.dll` of Firebird 3 (from the Windows x64 zip on
-[firebirdsql.org](https://firebirdsql.org/en/firebird-3-0/), together with
-`msvcp100.dll` and `msvcr100.dll`) into the HeidiSQL folder as
-`fbclient-3.0.dll` and select it as **Library**, or use Firebird 4 or 5.
-
 **How do I reset a database?** — **Reset data** on its card removes the
 container and its volume; the next start initialises it again, including the
 sample data. For SQLite the file is deleted.
