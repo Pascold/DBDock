@@ -12,6 +12,27 @@ pub fn database_path(s: &EngineSettings) -> String {
     format!("{DATA_DIR}/{}.fdb", s.database)
 }
 
+const DATABASES_CONF: &str = "/opt/firebird/databases.conf";
+
+/// Entrypoint that registers the database name as an alias, so clients can
+/// connect to `testdb` instead of the full file path, then runs the image's
+/// own entrypoint. `databases.conf` is not in a volume: the alias is added
+/// once per container. The name is a validated identifier, safe in shell.
+fn entrypoint(s: &EngineSettings) -> Yaml {
+    let alias = format!("{} = {}", s.database, database_path(s));
+    let script = format!(
+        "grep -qx '{alias}' {DATABASES_CONF} || echo '{alias}' >> {DATABASES_CONF}; \
+         exec entrypoint.sh firebird"
+    );
+    Yaml::strings([
+        "tini".to_owned(),
+        "--".into(),
+        "sh".into(),
+        "-c".into(),
+        script,
+    ])
+}
+
 impl Engine for Firebird {
     fn id(&self) -> EngineId {
         EngineId::Firebird
@@ -70,6 +91,7 @@ impl Engine for Firebird {
             compose::escape(&database_path(s))
         );
         let service = compose::service(self.image(s))
+            .with("entrypoint", entrypoint(s))
             .with(
                 "environment",
                 compose::environment([
@@ -104,6 +126,10 @@ impl Engine for Firebird {
         ConnectionInfo::server(s, path.clone(), &s.user, &s.password)
             .with("Firebird", format!("{HOST}/{}:{path}", s.port))
             .with(
+                "Firebird (alias)",
+                format!("{HOST}/{}:{}", s.port, s.database),
+            )
+            .with(
                 "JDBC (Jaybird)",
                 format!("jdbc:firebird://{HOST}:{}/{path}", s.port),
             )
@@ -129,9 +155,22 @@ mod tests {
             info.strings[0].1,
             "localhost/3050:/var/lib/firebird/data/testdb.fdb"
         );
+        assert_eq!(info.strings[1].1, "localhost/3050:testdb");
         assert_eq!(
-            info.strings[1].1,
+            info.strings[2].1,
             "jdbc:firebird://localhost:3050//var/lib/firebird/data/testdb.fdb"
         );
+    }
+
+    #[test]
+    fn alias_for_the_database_name() {
+        let mut s = Firebird.default_settings();
+        s.database = "shop_db".into();
+        let Yaml::Seq(items) = entrypoint(&s) else {
+            panic!("entrypoint is a list");
+        };
+        let script = format!("{items:?}");
+        assert!(script.contains("shop_db = /var/lib/firebird/data/shop_db.fdb"));
+        assert!(script.contains("exec entrypoint.sh firebird"));
     }
 }

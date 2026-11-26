@@ -133,6 +133,8 @@ apply_reset = "Apply and reset data"
 apply_reset_hint = "Deletes all data of this database"
 apply_restart = "Apply and restart"
 save = "Save"
+eol = "EOL"
+eol_hint = "End of life: the vendor no longer releases fixes for this version, security fixes included. It still works and is fine for testing older applications, but should not be used in production."
 
 [settings.field]
 version = "Version (image tag)"

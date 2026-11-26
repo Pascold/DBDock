@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Firebird registers the database name as an alias: clients can connect to
+  `testdb` (`localhost/3050:testdb`) instead of the full file path
+  `/var/lib/firebird/data/testdb.fdb`, which still works.
+- Version suggestions that no longer get updates from the vendor are marked
+  **EOL** (PostgreSQL 13 and 14, MySQL 8.0, MariaDB 10.6); hovering the mark
+  explains what end of life means. They stay available for testing older
+  applications.
+
 ### Changed
 
 - InterBase without a registered license no longer looks like a running

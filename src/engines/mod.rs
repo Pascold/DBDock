@@ -112,6 +112,23 @@ pub trait Engine: Sync {
     /// Suggested image tags, newest first.
     fn version_suggestions(&self) -> &'static [&'static str];
 
+    /// Suggested tags whose version no longer gets updates from the vendor
+    /// (end of life). They stay available for testing older applications.
+    fn eol_versions(&self) -> &'static [&'static str] {
+        &[]
+    }
+
+    /// True if `version` is an end-of-life tag or a more specific tag of one
+    /// (`13.4`, `13-alpine`).
+    fn is_eol(&self, version: &str) -> bool {
+        let version = version.trim();
+        self.eol_versions().iter().any(|tag| {
+            version
+                .strip_prefix(tag)
+                .is_some_and(|rest| rest.is_empty() || rest.starts_with(['.', '-']))
+        })
+    }
+
     /// Name of the administrator account (`root`, `sa`, `SYSDBA`), if any.
     fn admin_user(&self) -> Option<&'static str> {
         None

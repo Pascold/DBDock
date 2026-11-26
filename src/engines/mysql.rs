@@ -39,6 +39,11 @@ impl Engine for MySql {
         &["9", "8.4", "8.0"]
     }
 
+    // 8.0 ended in April 2026.
+    fn eol_versions(&self) -> &'static [&'static str] {
+        &["8.0"]
+    }
+
     fn admin_user(&self) -> Option<&'static str> {
         Some("root")
     }

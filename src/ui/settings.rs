@@ -181,13 +181,27 @@ impl SettingsDraft {
                             .selected_text(t("settings.suggestions"))
                             .show_ui(ui, |ui| {
                                 for &tag in id.engine().version_suggestions() {
-                                    ui.selectable_value(
-                                        &mut self.settings.version,
-                                        tag.to_owned(),
-                                        tag,
-                                    );
+                                    if id.engine().is_eol(tag) {
+                                        let label = format!("{tag}   {}", t("settings.eol"));
+                                        ui.selectable_value(
+                                            &mut self.settings.version,
+                                            tag.to_owned(),
+                                            label,
+                                        )
+                                        .on_hover_text(t("settings.eol_hint"));
+                                    } else {
+                                        ui.selectable_value(
+                                            &mut self.settings.version,
+                                            tag.to_owned(),
+                                            tag,
+                                        );
+                                    }
                                 }
                             });
+                        if id.engine().is_eol(&self.settings.version) {
+                            ui.label(RichText::new(t("settings.eol")).color(WARNING_COLOR))
+                                .on_hover_text(t("settings.eol_hint"));
+                        }
                     });
                     ui.label(
                         RichText::new(tf(

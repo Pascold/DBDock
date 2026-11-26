@@ -133,6 +133,8 @@ apply_reset = "Zastosuj i zresetuj dane"
 apply_reset_hint = "Usuwa wszystkie dane tej bazy"
 apply_restart = "Zastosuj i zrestartuj"
 save = "Zapisz"
+eol = "EOL"
+eol_hint = "End of Life (koniec wsparcia): producent nie wydaje już poprawek dla tej wersji, także poprawek bezpieczeństwa. Wersja nadal działa i nadaje się do testów starszych aplikacji, ale nie do użytku produkcyjnego."
 
 [settings.field]
 version = "Wersja (tag obrazu)"

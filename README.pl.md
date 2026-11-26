@@ -60,7 +60,7 @@ masz go zainstalowanego.
 | MariaDB | `mariadb:11.4` | 3306 → 3306 | `testdb` | `tester` / `tester123` | `root` / `root123` |
 | MySQL | `mysql:8.4` | 3307 → 3306 | `testdb` | `tester` / `tester123` | `root` / `root123` |
 | MS SQL Server | `mcr.microsoft.com/mssql/server:2022-latest` | 1433 → 1433 | `testdb` | `tester` / `tester123` | `sa` / `Test_Passw0rd!` |
-| Firebird | `firebirdsql/firebird:5` | 3050 → 3050 | `/var/lib/firebird/data/testdb.fdb` | `tester` / `tester123` | `SYSDBA` / `masterkey` |
+| Firebird | `firebirdsql/firebird:5` | 3050 → 3050 | `testdb` (alias pliku `/var/lib/firebird/data/testdb.fdb`) | `tester` / `tester123` | `SYSDBA` / `masterkey` |
 | InterBase (eksperymentalnie) | `radstudio/interbase:2020.4` | 3051 → 3050 | tworzysz sam (patrz niżej) | — | `SYSDBA` / `masterkey` |
 | SQLite | `alpine:3` + `sqlite` | — | `test.db` w folderze danych | — | — |
 
@@ -166,6 +166,7 @@ Dla ustawień domyślnych:
 | MS SQL Server (ADO.NET) | `Server=localhost,1433;Database=testdb;User Id=tester;Password=tester123;TrustServerCertificate=True` |
 | MS SQL Server (JDBC) | `jdbc:sqlserver://localhost:1433;databaseName=testdb;encrypt=true;trustServerCertificate=true` |
 | Firebird | `localhost/3050:/var/lib/firebird/data/testdb.fdb` |
+| Firebird (alias) | `localhost/3050:testdb` |
 | Firebird (JDBC) | `jdbc:firebird://localhost:3050//var/lib/firebird/data/testdb.fdb` |
 | InterBase | `localhost/3051:/opt/interbase/testdb.ib` |
 | SQLite | plik `sqlite/test.db` w folderze danych |

@@ -39,6 +39,11 @@ impl Engine for MariaDb {
         &["11.8", "11.4", "10.11", "10.6"]
     }
 
+    // 10.6 ended in July 2026.
+    fn eol_versions(&self) -> &'static [&'static str] {
+        &["10.6"]
+    }
+
     fn admin_user(&self) -> Option<&'static str> {
         Some("root")
     }

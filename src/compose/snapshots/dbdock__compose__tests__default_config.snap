@@ -127,6 +127,12 @@ services:
     restart: "no"
   firebird:
     image: "firebirdsql/firebird:5"
+    entrypoint:
+      - "tini"
+      - "--"
+      - "sh"
+      - "-c"
+      - "grep -qx 'testdb = /var/lib/firebird/data/testdb.fdb' /opt/firebird/databases.conf || echo 'testdb = /var/lib/firebird/data/testdb.fdb' >> /opt/firebird/databases.conf; exec entrypoint.sh firebird"
     environment:
       FIREBIRD_ROOT_PASSWORD: "masterkey"
       FIREBIRD_USER: "tester"

@@ -58,7 +58,7 @@ you, so you don't need to know Docker. You only need to have it installed.
 | MariaDB | `mariadb:11.4` | 3306 → 3306 | `testdb` | `tester` / `tester123` | `root` / `root123` |
 | MySQL | `mysql:8.4` | 3307 → 3306 | `testdb` | `tester` / `tester123` | `root` / `root123` |
 | MS SQL Server | `mcr.microsoft.com/mssql/server:2022-latest` | 1433 → 1433 | `testdb` | `tester` / `tester123` | `sa` / `Test_Passw0rd!` |
-| Firebird | `firebirdsql/firebird:5` | 3050 → 3050 | `/var/lib/firebird/data/testdb.fdb` | `tester` / `tester123` | `SYSDBA` / `masterkey` |
+| Firebird | `firebirdsql/firebird:5` | 3050 → 3050 | `testdb` (alias of `/var/lib/firebird/data/testdb.fdb`) | `tester` / `tester123` | `SYSDBA` / `masterkey` |
 | InterBase (experimental) | `radstudio/interbase:2020.4` | 3051 → 3050 | created by you (see below) | — | `SYSDBA` / `masterkey` |
 | SQLite | `alpine:3` + `sqlite` | — | `test.db` in the data folder | — | — |
 
@@ -163,6 +163,7 @@ With the default settings:
 | MS SQL Server (ADO.NET) | `Server=localhost,1433;Database=testdb;User Id=tester;Password=tester123;TrustServerCertificate=True` |
 | MS SQL Server (JDBC) | `jdbc:sqlserver://localhost:1433;databaseName=testdb;encrypt=true;trustServerCertificate=true` |
 | Firebird | `localhost/3050:/var/lib/firebird/data/testdb.fdb` |
+| Firebird (alias) | `localhost/3050:testdb` |
 | Firebird (JDBC) | `jdbc:firebird://localhost:3050//var/lib/firebird/data/testdb.fdb` |
 | InterBase | `localhost/3051:/opt/interbase/testdb.ib` |
 | SQLite | the file `sqlite/test.db` in the data folder |

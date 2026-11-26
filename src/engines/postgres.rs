@@ -38,6 +38,11 @@ impl Engine for Postgres {
         &["18", "17", "16", "15", "14", "13"]
     }
 
+    // 13 ended in November 2025, 14 in November 2026.
+    fn eol_versions(&self) -> &'static [&'static str] {
+        &["14", "13"]
+    }
+
     fn image(&self, s: &EngineSettings) -> String {
         format!("postgres:{}", s.version)
     }
@@ -133,6 +138,16 @@ mod tests {
         assert_eq!(data_dir("19beta1"), "/var/lib/postgresql");
         assert_eq!(data_dir("latest"), "/var/lib/postgresql");
         assert_eq!(data_dir("alpine"), "/var/lib/postgresql");
+    }
+
+    #[test]
+    fn end_of_life_versions() {
+        for eol in ["13", "13.4", "13-alpine", "14", " 14.2 "] {
+            assert!(Postgres.is_eol(eol), "{eol}");
+        }
+        for supported in ["15", "17", "18", "130", "1", "latest", ""] {
+            assert!(!Postgres.is_eol(supported), "{supported}");
+        }
     }
 
     #[test]
