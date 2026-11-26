@@ -234,6 +234,21 @@ ręcznie. Pierwszy start może potrwać minutę.
 tylko wtedy, gdy wolumen z danymi jest pusty. Użyj **Zastosuj i zresetuj
 dane** (albo **Resetuj dane**), żeby zacząć od zera.
 
+**Baza nie startuje po zmianie wersji** — wolumen nadal ma pliki poprzedniej
+wersji, a nowy serwer ich nie przyjmuje: `database files are incompatible with
+server` (PostgreSQL), błąd o `pg_ctlcluster` i danych w `/var/lib/postgresql`
+(PostgreSQL 18) albo `unsupported on-disk structure` (Firebird). PostgreSQL
+nigdy nie otworzy danych z innej wersji głównej, a żadna baza nie obsługuje
+powrotu do starszej wersji. Użyj **Zastosuj i zresetuj dane** w
+**Ustawieniach** albo **Resetuj dane** na karcie.
+
+**Firebird 3 w HeidiSQL: „feature is not supported”** — serwer działa, ale
+HeidiSQL z `fbclient-4.0.dll` nie dogaduje się z Firebirdem 3. Wrzuć
+`fbclient.dll` z Firebirda 3 (z paczki zip dla Windows x64 na
+[firebirdsql.org](https://firebirdsql.org/en/firebird-3-0/), razem z
+`msvcp100.dll` i `msvcr100.dll`) do folderu HeidiSQL jako `fbclient-3.0.dll`
+i wybierz go w polu **Library** albo użyj Firebirda 4 lub 5.
+
 **Jak zresetować bazę?** — **Resetuj dane** na karcie usuwa kontener i jego
 wolumen; następny start inicjalizuje bazę od nowa razem z danymi testowymi.
 Dla SQLite usuwany jest plik.
