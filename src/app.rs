@@ -15,6 +15,7 @@ use crate::paths::AppPaths;
 use crate::ui::settings::{issue_text, SettingsDraft, SettingsOutcome};
 use crate::ui::toasts::Toasts;
 use crate::ui::windows::LogsWindow;
+use crate::update::{self, Release};
 
 /// How many finished operations are remembered for the output window.
 const KEPT_OPERATIONS: usize = 20;
@@ -72,6 +73,7 @@ pub enum Action {
     RecheckDocker,
     SetTheme(Theme),
     SetLanguage(Language),
+    SetCheckUpdates(bool),
 }
 
 pub struct DbDockApp {
@@ -95,6 +97,10 @@ pub struct DbDockApp {
     pub(crate) interbase_wizard: bool,
     /// Kept alive: on X11 the clipboard content disappears with its owner.
     clipboard: Option<arboard::Clipboard>,
+    /// Result of the background update check, received once.
+    update_rx: Option<std::sync::mpsc::Receiver<Option<Release>>>,
+    /// A newer release, if one exists.
+    pub(crate) update: Option<Release>,
 }
 
 impl DbDockApp {
@@ -108,6 +114,9 @@ impl DbDockApp {
         });
         let config = load_config(&paths, &mut toasts);
         i18n::set_language(config.language.unwrap_or_else(i18n::system_language));
+        let update_rx = config
+            .check_updates
+            .then(|| spawn_update_check(&cc.egui_ctx));
 
         let docker = Docker::new(move || ctx.request_repaint());
         docker.check();
@@ -129,6 +138,8 @@ impl DbDockApp {
             confirm_reset: None,
             interbase_wizard: false,
             clipboard: None,
+            update_rx,
+            update: None,
         };
         crate::ui::theme::apply_style(&cc.egui_ctx);
         app.apply_theme(&cc.egui_ctx);
@@ -189,6 +200,16 @@ impl DbDockApp {
     // -----------------------------------------------------------------------
 
     pub(crate) fn process_events(&mut self) {
+        if let Some(rx) = &self.update_rx {
+            match rx.try_recv() {
+                Ok(release) => {
+                    self.update = release;
+                    self.update_rx = None;
+                }
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => self.update_rx = None,
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+            }
+        }
         for event in self.docker.drain() {
             match event {
                 Event::Checked(check) => self.on_docker_checked(check),
@@ -339,6 +360,16 @@ impl DbDockApp {
             Action::RecheckDocker => {
                 self.docker_check = None;
                 self.docker.check();
+            }
+            Action::SetCheckUpdates(enabled) => {
+                self.config.check_updates = enabled;
+                self.save_config();
+                if !enabled {
+                    self.update = None;
+                    self.update_rx = None;
+                } else if self.update.is_none() && self.update_rx.is_none() {
+                    self.update_rx = Some(spawn_update_check(ctx));
+                }
             }
             Action::SetLanguage(language) => {
                 self.config.language = Some(language);
@@ -550,6 +581,7 @@ impl eframe::App for DbDockApp {
         let mut actions = Vec::new();
 
         self.top_bar(ui, &mut actions);
+        self.footer(ui, &mut actions);
         match &self.docker_check {
             Some(check) if check.is_ready() => self.cards(ui, &mut actions),
             check => crate::ui::docker_missing::show(ui, check.as_ref(), &mut actions),
@@ -631,4 +663,15 @@ fn last_line(text: &str) -> &str {
         .find(|l| !l.trim().is_empty())
         .unwrap_or(text)
         .trim()
+}
+
+/// Checks GitHub for a newer release on a background thread.
+fn spawn_update_check(ctx: &egui::Context) -> std::sync::mpsc::Receiver<Option<Release>> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let ctx = ctx.clone();
+    std::thread::spawn(move || {
+        let _ = tx.send(update::check());
+        ctx.request_repaint();
+    });
+    rx
 }

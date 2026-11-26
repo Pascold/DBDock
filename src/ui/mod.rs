@@ -172,3 +172,82 @@ pub(crate) fn dot(ui: &mut egui::Ui, color: egui::Color32) {
     let (rect, _) = ui.allocate_exact_size(egui::vec2(size * 0.7, size), egui::Sense::hover());
     ui.painter().circle_filled(rect.center(), size * 0.3, color);
 }
+
+/// Repository URL from `Cargo.toml`.
+const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+
+impl DbDockApp {
+    /// Bottom bar with the version, an update notice and links to the project.
+    pub(crate) fn footer(&self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
+        egui::Panel::bottom("footer").show(ui, |ui| {
+            ui.add_space(4.0);
+            ui.horizontal_wrapped(|ui| {
+                ui.label(
+                    RichText::new(format!("DBDock v{}", crate::update::CURRENT_VERSION)).strong(),
+                );
+                if let Some(release) = &self.update {
+                    update_badge(ui, release);
+                }
+                ui.label(RichText::new(tf("footer.by", &[("author", &"Pascold")])).weak());
+                ui.separator();
+                ui.hyperlink_to(t("footer.github"), REPOSITORY);
+                ui.hyperlink_to(t("footer.releases"), format!("{REPOSITORY}/releases"));
+                ui.hyperlink_to(
+                    t("footer.report_bug"),
+                    format!("{REPOSITORY}/issues/new/choose"),
+                );
+                ui.hyperlink_to(t("footer.discussions"), format!("{REPOSITORY}/discussions"));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(RichText::new(t("footer.license")).weak());
+                    ui.separator();
+                    let mut check = self.config.check_updates;
+                    if ui
+                        .checkbox(&mut check, t("footer.check_updates"))
+                        .on_hover_text(t("footer.check_updates_hint"))
+                        .changed()
+                    {
+                        actions.push(Action::SetCheckUpdates(check));
+                    }
+                });
+            });
+            ui.add_space(4.0);
+        });
+    }
+}
+
+/// Red exclamation mark and "Outdated" link to the newest release.
+fn update_badge(ui: &mut egui::Ui, release: &crate::update::Release) {
+    let size = ui.text_style_height(&egui::TextStyle::Body) + 2.0;
+    let (rect, badge) = ui.allocate_exact_size(egui::vec2(size, size), egui::Sense::click());
+    ui.painter()
+        .circle_filled(rect.center(), size / 2.0, ERROR_COLOR);
+    ui.painter().text(
+        rect.center(),
+        egui::Align2::CENTER_CENTER,
+        "!",
+        egui::FontId::proportional(size * 0.8),
+        egui::Color32::WHITE,
+    );
+    let link = ui.add(
+        egui::Label::new(
+            RichText::new(t("footer.outdated"))
+                .color(ERROR_COLOR)
+                .strong(),
+        )
+        .sense(egui::Sense::click()),
+    );
+    let hint = tf(
+        "footer.update_hint",
+        &[
+            ("latest", &release.tag),
+            ("current", &format!("v{}", crate::update::CURRENT_VERSION)),
+        ],
+    );
+    let response = badge.union(link).on_hover_text(hint);
+    if response.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    if response.clicked() {
+        ui.ctx().open_url(egui::OpenUrl::new_tab(&release.url));
+    }
+}

@@ -7,6 +7,18 @@ copy = "Copy"
 cancel = "Cancel"
 open_folder = "Open folder"
 
+[footer]
+by = "by {author}"
+github = "GitHub"
+releases = "Releases"
+report_bug = "Report a bug"
+discussions = "Discussions"
+license = "MIT OR Apache-2.0 · free and open source"
+outdated = "Outdated"
+check_updates = "Check for updates"
+check_updates_hint = "On start, ask GitHub whether a newer DBDock release exists (one anonymous request)."
+update_hint = "A new version {latest} is available (you have {current}). Click to open the download page."
+
 [top]
 start_all = "Start all enabled"
 stop_all = "Stop all"

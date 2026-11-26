@@ -12,3 +12,4 @@ pub mod i18n;
 pub mod paths;
 pub mod terminal;
 pub mod ui;
+pub mod update;

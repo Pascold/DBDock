@@ -110,6 +110,9 @@ pub struct AppConfig {
     /// Set once the user confirmed the InterBase license registration.
     #[serde(default)]
     pub interbase_licensed: bool,
+    /// Ask GitHub for a newer release on start.
+    #[serde(default = "default_true")]
+    pub check_updates: bool,
     pub engines: BTreeMap<EngineId, EngineSettings>,
 }
 
@@ -120,6 +123,7 @@ impl Default for AppConfig {
             language: None,
             theme: Theme::default(),
             interbase_licensed: false,
+            check_updates: true,
             engines: EngineId::ALL
                 .into_iter()
                 .map(|id| (id, id.engine().default_settings()))
@@ -175,6 +179,10 @@ impl AppConfig {
     pub fn save(&self, path: &Path) -> Result<(), ConfigError> {
         write_atomic(path, self.to_toml()?.as_bytes())
     }
+}
+
+fn default_true() -> bool {
+    true
 }
 
 /// Factory defaults of every engine, built once.
@@ -294,6 +302,17 @@ mod tests {
             config.engine(EngineId::MySql),
             &EngineId::MySql.engine().default_settings()
         );
+    }
+
+    #[test]
+    fn update_check_is_on_by_default_and_can_be_disabled() {
+        assert!(
+            AppConfig::from_toml("config_version = 1")
+                .unwrap()
+                .check_updates
+        );
+        let config = AppConfig::from_toml("config_version = 1\ncheck_updates = false").unwrap();
+        assert!(!config.check_updates);
     }
 
     #[test]
